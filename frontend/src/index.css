@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background-color: #08100a;
+    color: #edf5ee;
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #0f170f; }
+  ::-webkit-scrollbar-thumb { background: #2e3e30; border-radius: 2px; }
+
+  input, select, textarea, button { font-family: 'DM Sans', sans-serif; }
+  a { text-decoration: none; color: inherit; }
+}
+
+@layer utilities {
+  .animate-delay-1 { animation-delay: 0.05s; }
+  .animate-delay-2 { animation-delay: 0.10s; }
+  .animate-delay-3 { animation-delay: 0.15s; }
+  .animate-delay-4 { animation-delay: 0.20s; }
+  .animate-delay-5 { animation-delay: 0.25s; }
+
+  .text-stroke {
+    -webkit-text-stroke: 1.5px rgba(255,255,255,0.22);
+    color: transparent;
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(61,255,110,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,255,110,0.04) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at 30% 50%, black 0%, transparent 65%);
+  }
+
+  .grid-bg-sm {
+    background-image:
+      linear-gradient(rgba(61,255,110,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,255,110,0.03) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .bar-origin-bottom { transform-origin: bottom; }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+}
