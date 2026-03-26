@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Toast, { useToast } from '../components/Toast';
 
 const NAV_ITEMS = [
   { ico:'📊', label:'Dashboard',    path:'/dashboard', active:true  },
@@ -7,7 +8,7 @@ const NAV_ITEMS = [
   { ico:'📦', label:'My Listings',  path:'#',           active:false },
   { ico:'💬', label:'Messages',     path:'/chat',       active:false, badge:3 },
   { ico:'🌍', label:'Carbon Tracker',path:'#',          active:false },
-  { ico:'🏆', label:'Leaderboard',  path:'#',           active:false },
+  { ico:'🏆', label:'Leaderboard',  path:'/leaderboard',           active:false },
 ];
 
 const METRICS = [
@@ -50,6 +51,7 @@ const STREAK_ON = [false,true,true,true,true,false,true];
 export default function Dashboard() {
   const nav = useNavigate();
   const barRefs = useRef([]);
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     barRefs.current.forEach((el, i) => {
@@ -65,6 +67,7 @@ export default function Dashboard() {
 
   return (
     <div className="pt-[62px] bg-bg min-h-screen font-dm grid" style={{gridTemplateColumns:'240px 1fr'}}>
+      <Toast message={toast} onClose={hideToast} />
 
       {/* ── SIDEBAR ── */}
       <div className="border-r border-[rgba(61,255,110,0.13)] px-4 py-7 flex flex-col gap-1 bg-s1 sticky top-[62px] h-[calc(100vh-62px)] overflow-y-auto">
@@ -87,7 +90,14 @@ export default function Dashboard() {
 
         {NAV_ITEMS.map(item => (
           <button key={item.label}
-                  onClick={() => nav(item.path)}
+                  type="button"
+                  onClick={() => {
+                    if (item.path === '#') {
+                      showToast(`${item.label} is coming soon (demo).`);
+                      return;
+                    }
+                    nav(item.path);
+                  }}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-all duration-150
                               ${item.active
                                 ? 'bg-green-muted border border-[rgba(61,255,110,0.13)] text-green-eco font-bold'
@@ -101,7 +111,11 @@ export default function Dashboard() {
         ))}
 
         <div className="h-px bg-[rgba(61,255,110,0.13)] my-2" />
-        <button className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-muted hover:bg-s2 hover:text-offwhite w-full text-left transition-all">
+        <button
+          type="button"
+          onClick={() => showToast('Settings are coming soon (demo).')}
+          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-muted hover:bg-s2 hover:text-offwhite w-full text-left transition-all"
+        >
           <span className="text-lg">⚙️</span> Settings
         </button>
         <button onClick={() => nav('/')} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-muted hover:bg-s2 hover:text-offwhite w-full text-left transition-all">
@@ -118,8 +132,20 @@ export default function Dashboard() {
             <div className="text-sm text-muted">Thursday, 15 January 2025</div>
           </div>
           <div className="flex gap-2.5">
-            <button className="bg-s2 border border-[rgba(255,255,255,0.06)] text-offwhite px-4 py-2.5 rounded-full text-sm font-semibold hover:border-[rgba(61,255,110,0.13)] transition-all">📊 Reports</button>
-            <button className="bg-green-eco text-bg px-4 py-2.5 rounded-full text-sm font-bold hover:bg-[#72ff97] transition-all">+ List New Item</button>
+            <button
+              type="button"
+              onClick={() => showToast('Reports are coming soon (demo).')}
+              className="bg-s2 border border-[rgba(255,255,255,0.06)] text-offwhite px-4 py-2.5 rounded-full text-sm font-semibold hover:border-[rgba(61,255,110,0.13)] transition-all"
+            >
+              📊 Reports
+            </button>
+            <button
+              type="button"
+              onClick={() => showToast('Listing creation is coming soon (demo).')}
+              className="bg-green-eco text-bg px-4 py-2.5 rounded-full text-sm font-bold hover:bg-[#72ff97] transition-all"
+            >
+              + List New Item
+            </button>
           </div>
         </div>
 
@@ -216,7 +242,13 @@ export default function Dashboard() {
           <div className="bg-s1 border border-[rgba(255,255,255,0.06)] rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <div className="font-syne text-base font-bold">📦 My Listings</div>
-              <button className="border border-[rgba(255,255,255,0.06)] text-muted text-xs px-3 py-1 rounded-full hover:border-[rgba(61,255,110,0.13)] transition-all">View All</button>
+              <button
+                type="button"
+                onClick={() => showToast('View all listings is coming soon (demo).')}
+                className="border border-[rgba(255,255,255,0.06)] text-muted text-xs px-3 py-1 rounded-full hover:border-[rgba(61,255,110,0.13)] transition-all"
+              >
+                View All
+              </button>
             </div>
             <div className="flex flex-col">
               {LISTINGS.map((l, i) => (

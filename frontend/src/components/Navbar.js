@@ -2,6 +2,12 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const AUTH_ROUTES = ['/login', '/register', '/verify'];
+const NAV_LINKS = [
+  { path: '/', label: 'Marketplace' },
+  { path: '/dashboard', label: 'Dashboard' },
+  { path: '/leaderboard', label: 'Leaderboard' },
+  { path: '/sell', label: 'Sell' }
+];
 
 export default function Navbar() {
   const nav = useNavigate();
@@ -25,12 +31,16 @@ export default function Navbar() {
 
       {/* Links */}
       <div className="flex items-center gap-7">
-        {[['/', 'Marketplace'], ['/dashboard', 'Dashboard'], ['#', 'Leaderboard'], ['#', 'Sell']].map(([href, label]) => (
-          <a key={label} href={href}
-             className={`text-sm font-medium transition-colors duration-150
-                        ${pathname === href ? 'text-offwhite' : 'text-muted hover:text-offwhite'}`}>
+        {NAV_LINKS.map(({ path, label }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => nav(path)}
+            className={`text-sm font-medium transition-colors duration-150
+                        ${pathname === path ? 'text-offwhite' : 'text-muted hover:text-offwhite'}`}
+          >
             {label}
-          </a>
+          </button>
         ))}
       </div>
 

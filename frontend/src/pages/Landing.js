@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Toast, { useToast } from '../components/Toast';
 
 const STEPS = [
   { n:'01', ico:'🎓', t:'Verify your .edu',    d:"Sign up with your official college email. We verify it's real — no fake accounts, ever." },
@@ -45,9 +46,11 @@ function SectionH({ children }) {
 
 export default function Landing() {
   const nav = useNavigate();
+  const { toast, showToast, hideToast } = useToast();
 
   return (
     <div className="pt-[62px] bg-bg min-h-screen font-dm">
+      <Toast message={toast} onClose={hideToast} />
 
       {/* ── HERO ── */}
       <section className="relative min-h-[calc(100vh-62px)] grid grid-cols-[1fr_520px] items-center px-20 overflow-hidden">
@@ -228,13 +231,17 @@ export default function Landing() {
         <SectionH>Find anything <em className="text-green-eco not-italic">campus</em></SectionH>
         <div className="grid grid-cols-6 gap-3.5 mt-12">
           {CATS.map(c => (
-            <div key={c.n}
-                 className="bg-s1 border border-[rgba(255,255,255,0.06)] rounded-2xl p-6 text-center cursor-pointer
-                            hover:border-[rgba(61,255,110,0.13)] hover:bg-s2 hover:-translate-y-1 transition-all duration-200">
+            <button
+              key={c.n}
+              type="button"
+              onClick={() => showToast(`${c.n} browsing is coming soon.`)}
+              className="bg-s1 border border-[rgba(255,255,255,0.06)] rounded-2xl p-6 text-center cursor-pointer
+                            hover:border-[rgba(61,255,110,0.13)] hover:bg-s2 hover:-translate-y-1 transition-all duration-200"
+            >
               <div className="text-[36px] mb-2.5">{c.ico}</div>
               <div className="text-sm font-semibold">{c.n}</div>
               <div className="text-xs text-muted mt-0.5">{c.c} items</div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
@@ -286,7 +293,14 @@ export default function Landing() {
         </div>
         <div className="flex gap-6">
           {['About','Privacy','Terms','Contact'].map(l => (
-            <a key={l} href="#" className="text-muted hover:text-offwhite transition-colors">{l}</a>
+            <button
+              key={l}
+              type="button"
+              onClick={() => showToast(`${l} page is coming soon.`)}
+              className="text-muted hover:text-offwhite transition-colors"
+            >
+              {l}
+            </button>
           ))}
         </div>
       </footer>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
+import Toast, { useToast } from '../components/Toast';
 
 const getStrength = pwd => pwd.length === 0 ? 0 : pwd.length < 6 ? 1 : pwd.length < 10 ? 2 : 3;
 const STRENGTH_LABEL = ['','Weak','Medium','Strong'];
@@ -11,9 +12,11 @@ export default function Register() {
   const nav = useNavigate();
   const [pwd, setPwd] = useState('StrongPass1!');
   const strength = getStrength(pwd);
+  const { toast, showToast, hideToast } = useToast();
 
   return (
     <AuthLayout>
+      <Toast message={toast} onClose={hideToast} />
       <div className="w-[520px] bg-s1 border border-[rgba(61,255,110,0.13)] rounded-[22px] p-11
                       relative z-10 shadow-card-lg animate-card-in">
         <button onClick={() => nav('/')}
@@ -28,7 +31,12 @@ export default function Register() {
         <p className="text-sm text-muted mb-7">Create your free account — exclusive .edu.in access</p>
 
         {/* Google */}
-        <button className="w-full flex items-center gap-3 bg-s2 border border-[rgba(255,255,255,0.06)]
+        <button
+          onClick={() => {
+            showToast('Signed up with Google (.edu.in) (demo).');
+            nav('/verify');
+          }}
+          className="w-full flex items-center gap-3 bg-s2 border border-[rgba(255,255,255,0.06)]
                            text-offwhite px-5 py-3.5 rounded-xl text-[15px] font-semibold mb-5
                            hover:border-[rgba(61,255,110,0.13)] hover:bg-s3 transition-all duration-200">
           <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0"
@@ -128,8 +136,21 @@ export default function Register() {
         </p>
         <p className="text-xs text-muted text-center mt-3.5 leading-relaxed">
           By creating an account you agree to our{' '}
-          <a href="#" className="underline">Terms of Service</a> and{' '}
-          <a href="#" className="underline">Privacy Policy</a>
+          <button
+            type="button"
+            onClick={() => showToast('Terms of Service are coming soon.')}
+            className="underline bg-transparent border-none p-0 text-muted"
+          >
+            Terms of Service
+          </button>{' '}
+          and{' '}
+          <button
+            type="button"
+            onClick={() => showToast('Privacy Policy is coming soon.')}
+            className="underline bg-transparent border-none p-0 text-muted"
+          >
+            Privacy Policy
+          </button>
         </p>
       </div>
     </AuthLayout>

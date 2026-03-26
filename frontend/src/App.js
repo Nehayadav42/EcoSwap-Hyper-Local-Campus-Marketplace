@@ -8,6 +8,8 @@ import Register  from './pages/Register';
 import Verify    from './pages/Verify';
 import Chat      from './pages/Chat';
 import Dashboard from './pages/Dashboard';
+import Leaderboard from './pages/Leaderboard';
+import Sell from './pages/Sell';
 
 export default function App() {
   return (
@@ -20,6 +22,8 @@ export default function App() {
         <Route path="/verify"    element={<Verify />} />
         <Route path="/chat"      element={<Chat />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/sell" element={<Sell />} />
         <Route path="*"          element={<Navigate to="/" />} />
       </Routes>
       <TabBar />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Toast, { useToast } from '../components/Toast';
 
 const CONTACTS = [
   { id:1, name:'Aryan Sharma',  av:'🧑', preview:'Sure, ₹160 works for me! 🙌',       time:'2m',  unread:2, online:true  },
@@ -21,18 +22,27 @@ const MSGS = [
 export default function Chat() {
   const [active, setActive] = useState(1);
   const [input, setInput] = useState('');
+  const [dealStatus, setDealStatus] = useState('negotiating'); // negotiating | agreed | declined | sold
+  const { toast, showToast, hideToast } = useToast();
 
   return (
     <div className="grid mt-[62px] h-[calc(100vh-62px)] overflow-hidden"
          style={{gridTemplateColumns:'300px 1fr 280px'}}>
+      <Toast message={toast} onClose={hideToast} />
 
       {/* ── SIDEBAR ── */}
       <div className="border-r border-[rgba(61,255,110,0.13)] flex flex-col overflow-hidden bg-s1">
         <div className="flex items-center justify-between px-5 py-5 border-b border-[rgba(61,255,110,0.13)]">
           <span className="font-syne text-lg font-extrabold">Messages</span>
-          <div className="w-8 h-8 rounded-full bg-green-muted border border-[rgba(61,255,110,0.13)]
+          <button
+            type="button"
+            onClick={() => showToast('New conversation is coming soon (demo).')}
+            className="w-8 h-8 rounded-full bg-green-muted border border-[rgba(61,255,110,0.13)]
                           flex items-center justify-center text-lg text-green-eco cursor-pointer
-                          hover:bg-green-eco hover:text-bg transition-all">+</div>
+                          hover:bg-green-eco hover:text-bg transition-all"
+          >
+            +
+          </button>
         </div>
         <div className="px-4 py-3 border-b border-[rgba(61,255,110,0.13)]">
           <div className="bg-s2 border border-border rounded-lg px-3.5 py-2.5 flex items-center gap-2.5">
@@ -83,7 +93,15 @@ export default function Chat() {
           </div>
           <div className="ml-auto flex gap-2">
             {['📞 Call','✅ Mark as Sold','⋯'].map((lbl, i) => (
-              <button key={lbl}
+              <button key={lbl} type="button"
+                      onClick={() => {
+                        if (i === 0) showToast('Calling is coming soon (demo).');
+                        if (i === 1) {
+                          setDealStatus('sold');
+                          showToast('Marked as sold (demo).');
+                        }
+                        if (i === 2) showToast('More actions coming soon (demo).');
+                      }}
                       className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200
                                   ${i === 1
                                     ? 'bg-green-muted border-[rgba(61,255,110,0.13)] text-green-eco'
@@ -113,8 +131,28 @@ export default function Chat() {
                     <div className="font-syne text-[28px] font-extrabold text-green-eco">{m.amount}</div>
                     <div className="text-xs text-muted mt-0.5">Original: {m.orig} · You save: {m.save}</div>
                     <div className="flex gap-2 mt-3">
-                      <button className="flex-1 bg-green-eco text-bg border-none py-2 px-4 rounded-full text-xs font-bold">✓ Accept {m.amount}</button>
-                      <button className="border border-[rgba(255,92,92,0.35)] text-danger bg-transparent py-2 px-3.5 rounded-full text-xs">✗ Decline</button>
+                      <button
+                        type="button"
+                        disabled={dealStatus !== 'negotiating'}
+                        onClick={() => {
+                          setDealStatus('agreed');
+                          showToast(`Accepted ${m.amount} (demo).`);
+                        }}
+                        className="flex-1 bg-green-eco text-bg border-none py-2 px-4 rounded-full text-xs font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        ✓ Accept {m.amount}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={dealStatus !== 'negotiating'}
+                        onClick={() => {
+                          setDealStatus('declined');
+                          showToast('Declined offer (demo).');
+                        }}
+                        className="border border-[rgba(255,92,92,0.35)] text-danger bg-transparent py-2 px-3.5 rounded-full text-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        ✗ Decline
+                      </button>
                     </div>
                   </div>
                   <div className="text-[10.5px] text-muted mt-1">{m.time}</div>
@@ -146,9 +184,16 @@ export default function Chat() {
         <div className="flex items-center gap-2.5 px-5 py-4 border-t border-[rgba(61,255,110,0.13)] bg-s1 flex-shrink-0">
           <div className="flex gap-1.5">
             {['📎','📸','💸'].map(ico => (
-              <div key={ico} className="w-9 h-9 rounded-full bg-s2 border border-[rgba(255,255,255,0.06)]
-                                        flex items-center justify-center text-sm text-muted cursor-pointer
-                                        hover:border-[rgba(61,255,110,0.13)] hover:text-offwhite transition-all">{ico}</div>
+              <button
+                key={ico}
+                type="button"
+                onClick={() => showToast(`${ico} picker is coming soon (demo).`)}
+                className="w-9 h-9 rounded-full bg-s2 border border-[rgba(255,255,255,0.06)]
+                                        flex items-center justify-center text-sm text-muted
+                                        cursor-pointer hover:border-[rgba(61,255,110,0.13)] hover:text-offwhite transition-all"
+              >
+                {ico}
+              </button>
             ))}
           </div>
           <input value={input} onChange={e => setInput(e.target.value)}
@@ -156,7 +201,16 @@ export default function Chat() {
                  placeholder="Type a message or make an offer..."
                  className="flex-1 bg-s2 border border-border rounded-xl px-4 py-3 text-offwhite text-sm outline-none
                             focus:border-green-eco transition-colors placeholder-muted" />
-          <button onClick={() => setInput('')}
+          <button
+                  type="button"
+                  onClick={() => {
+                    if (!input.trim()) {
+                      showToast('Type a message first.');
+                      return;
+                    }
+                    setInput('');
+                    showToast('Message sent (demo).');
+                  }}
                   className="w-[42px] h-[42px] rounded-full bg-green-eco border-none text-bg text-lg
                              hover:bg-[#72ff97] hover:scale-110 transition-all duration-200">➤</button>
         </div>
@@ -177,7 +231,18 @@ export default function Chat() {
           </div>
           <div className="flex flex-col gap-2 mt-3">
             {['✅ Mark as Sold','💸 Send Offer Card','📍 Share Meet Location'].map((lbl, i) => (
-              <button key={lbl}
+              <button key={lbl} type="button"
+                      onClick={() => {
+                        if (i === 0) {
+                          setDealStatus('sold');
+                          showToast('Marked as sold (demo).');
+                        } else if (i === 1) {
+                          setDealStatus('negotiating');
+                          showToast('Offer card sent (demo).');
+                        } else {
+                          showToast('Meet location shared (demo).');
+                        }
+                      }}
                       className={`w-full py-2.5 px-3.5 rounded-xl text-sm font-medium text-left border transition-all duration-150
                                   ${i === 0
                                     ? 'bg-green-muted border-[rgba(61,255,110,0.13)] text-green-eco font-bold'
@@ -191,12 +256,30 @@ export default function Chat() {
         {/* Transaction */}
         <div className="bg-s2 border border-[rgba(255,255,255,0.06)] rounded-2xl p-4">
           <div className="text-[11px] font-bold text-muted tracking-[0.8px] mb-3">TRANSACTION STATUS</div>
-          {[['Listed Price','₹180',''],['Agreed Price','₹160','text-green-eco'],['Status','● Negotiating','text-warn'],['Meet Time','Tomorrow 4 PM',''],['Meet Place','Library Gate','']].map(([l,v,c]) => (
-            <div key={l} className="flex justify-between py-2 border-b border-[rgba(255,255,255,0.04)] last:border-b-0">
-              <span className="text-xs text-muted">{l}</span>
-              <span className={`text-xs font-semibold ${c || ''}`}>{v}</span>
-            </div>
-          ))}
+          {(() => {
+            const agreedPrice = dealStatus === 'agreed' || dealStatus === 'sold' ? '₹160' : '—';
+            const status =
+              dealStatus === 'negotiating'
+                ? { text: '● Negotiating', cls: 'text-warn' }
+                : dealStatus === 'agreed'
+                  ? { text: '● Agreed', cls: 'text-green-eco' }
+                  : dealStatus === 'declined'
+                    ? { text: '✗ Declined', cls: 'text-danger' }
+                    : { text: '✓ Sold', cls: 'text-green-eco' };
+
+            return [
+              ['Listed Price', '₹180', ''],
+              ['Agreed Price', agreedPrice, ''],
+              ['Status', status.text, status.cls],
+              ['Meet Time', 'Tomorrow 4 PM', ''],
+              ['Meet Place', 'Library Gate', ''],
+            ].map(([l, v, c]) => (
+              <div key={l} className="flex justify-between py-2 border-b border-[rgba(255,255,255,0.04)] last:border-b-0">
+                <span className="text-xs text-muted">{l}</span>
+                <span className={`text-xs font-semibold ${c || ''}`}>{v}</span>
+              </div>
+            ));
+          })()}
         </div>
 
         {/* Eco */}

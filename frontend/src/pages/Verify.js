@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
+import Toast, { useToast } from '../components/Toast';
 
 const TOTAL = 167;
 
@@ -9,6 +10,7 @@ export default function Verify() {
   const [otp, setOtp] = useState(['4','8','3','','','']);
   const [secs, setSecs] = useState(TOTAL);
   const refs = useRef([]);
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s > 0 ? s - 1 : 0), 1000);
@@ -17,6 +19,7 @@ export default function Verify() {
 
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   const progress = (secs / TOTAL) * 100;
+  const otpValue = otp.join('');
 
   const handleChange = (i, val) => {
     const next = [...otp]; next[i] = val.slice(-1); setOtp(next);
@@ -28,6 +31,7 @@ export default function Verify() {
 
   return (
     <AuthLayout>
+      <Toast message={toast} onClose={hideToast} />
       <div className="w-[460px] bg-s1 border border-[rgba(61,255,110,0.13)] rounded-[22px] p-11
                       relative z-10 shadow-card-lg animate-card-in text-center">
         {/* Icon */}
@@ -61,7 +65,15 @@ export default function Verify() {
           ))}
         </div>
 
-        <button onClick={() => nav('/dashboard')}
+        <button
+          onClick={() => {
+            if (otpValue.length !== 6) {
+              showToast('Enter the full 6-digit code first.');
+              return;
+            }
+            showToast('Verified (demo). Entering UniThrift...');
+            nav('/dashboard');
+          }}
                 className="w-full bg-green-eco text-bg py-3.5 rounded-xl text-base font-bold
                            hover:bg-[#72ff97] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200">
           ✓ Verify & Enter UniThrift
@@ -69,7 +81,18 @@ export default function Verify() {
 
         <p className="text-sm text-muted mt-4">
           Didn't get it?{' '}
-          <a href="#" className="text-green-eco font-semibold">Resend code</a>
+          <button
+            type="button"
+            onClick={() => {
+              setSecs(TOTAL);
+              setOtp(['','','','','','']);
+              refs.current[0]?.focus();
+              showToast('New code sent (demo).');
+            }}
+            className="text-green-eco font-semibold bg-transparent border-none p-0"
+          >
+            Resend code
+          </button>
           {' · '}
           <button onClick={() => nav('/register')} className="text-green-eco font-semibold bg-transparent border-none p-0">
             Change email

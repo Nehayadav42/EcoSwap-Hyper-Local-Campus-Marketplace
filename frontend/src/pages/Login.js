@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
+import Toast, { useToast } from '../components/Toast';
 
 export default function Login() {
   const nav = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
 
   return (
     <AuthLayout>
+      <Toast message={toast} onClose={hideToast} />
       <div className="w-[460px] bg-s1 border border-[rgba(61,255,110,0.13)] rounded-[22px] p-11
                       relative z-10 shadow-card-lg animate-card-in">
         <button onClick={() => nav('/')}
@@ -22,7 +25,12 @@ export default function Login() {
         <p className="text-sm text-muted mb-7">Sign in to your campus marketplace</p>
 
         {/* Google */}
-        <button className="w-full flex items-center gap-3 bg-s2 border border-[rgba(255,255,255,0.06)]
+        <button
+          onClick={() => {
+            showToast('Signed in with Google (.edu.in) (demo).');
+            nav('/dashboard');
+          }}
+          className="w-full flex items-center gap-3 bg-s2 border border-[rgba(255,255,255,0.06)]
                            text-offwhite px-5 py-3.5 rounded-xl text-[15px] font-semibold mb-5
                            hover:border-[rgba(61,255,110,0.13)] hover:bg-s3 transition-all duration-200">
           <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs font-extrabold text-white flex-shrink-0"
@@ -57,7 +65,13 @@ export default function Login() {
         <div className="mb-5">
           <div className="flex justify-between items-center mb-2">
             <label className="text-[11.5px] font-bold text-muted tracking-[0.6px]">PASSWORD</label>
-            <a href="#" className="text-xs text-green-eco font-semibold">Forgot password?</a>
+            <button
+              type="button"
+              onClick={() => showToast('Forgot password flow is coming soon.')}
+              className="text-xs text-green-eco font-semibold bg-transparent border-none p-0"
+            >
+              Forgot password?
+            </button>
           </div>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[17px] pointer-events-none">🔑</span>
@@ -84,8 +98,22 @@ export default function Login() {
           </button>
         </p>
         <p className="text-xs text-muted text-center mt-3.5 leading-relaxed">
-          By continuing you agree to our <a href="#" className="underline text-muted">Terms</a> and{' '}
-          <a href="#" className="underline text-muted">Privacy Policy</a>
+          By continuing you agree to our{' '}
+          <button
+            type="button"
+            onClick={() => showToast('Terms are coming soon.')}
+            className="underline text-muted bg-transparent border-none p-0"
+          >
+            Terms
+          </button>{' '}
+          and{' '}
+          <button
+            type="button"
+            onClick={() => showToast('Privacy Policy is coming soon.')}
+            className="underline text-muted bg-transparent border-none p-0"
+          >
+            Privacy Policy
+          </button>
         </p>
       </div>
     </AuthLayout>
