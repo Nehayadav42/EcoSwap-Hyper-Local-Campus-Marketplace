@@ -25,7 +25,7 @@ export default function Navbar() {
         Uni<span className="text-offwhite">Thrift</span>
         <span className="text-[10.5px] font-bold px-2.5 py-0.5 rounded-full
                          bg-green-muted border border-[rgba(61,255,110,0.13)] text-green-eco tracking-wide">
-          🔒 .edu.in only
+          🔒 Campus email (demo accepts any)
         </span>
       </div>
 

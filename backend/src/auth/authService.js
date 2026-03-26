@@ -25,7 +25,8 @@ function signToken({ email, verified }) {
 }
 
 async function registerUser({ email, password }) {
-  if (!isEduInEmail(email)) {
+  const requireEduEmail = process.env.REQUIRE_EDU_EMAIL === 'true';
+  if (requireEduEmail && !isEduInEmail(email)) {
     return { ok: false, statusCode: 400, error: 'Only .edu.in emails are accepted.' };
   }
   if (!password || password.length < 8) {

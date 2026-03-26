@@ -1,0 +1,28 @@
+{
+  "users": {
+    "yadavneha0402@gmail.com": {
+      "email": "yadavneha0402@gmail.com",
+      "passwordHash": "$2a$10$abOEDLuEi0gxj03kk/GSYOx8kPZppCopRKYoWpEsVZqz3aiy9PQFK",
+      "verified": false,
+      "createdAt": "2026-03-26T07:20:22.378Z"
+    },
+    "test@gmail.com": {
+      "email": "test@gmail.com",
+      "passwordHash": "$2a$10$TrGYyEOuvr3DCdT1vEaPMOYH0NAwBI7QvLg7jxr9ale2kBiAyPNBy",
+      "verified": false,
+      "createdAt": "2026-03-26T07:25:41.878Z"
+    }
+  },
+  "otps": {
+    "yadavneha0402@gmail.com": {
+      "codeHash": "$2a$10$CYBq54NPYsf.LRDh/pEH5.Tq6/71lBvmfG/NsslZrjlx3TJl4lpMu",
+      "expiresAt": 1774512101065,
+      "createdAt": "2026-03-26T07:59:42.065Z"
+    },
+    "test@gmail.com": {
+      "codeHash": "$2a$10$S8c16Vyx8bPSDa4g9jy/wuXIpYA9nZsUyhYpklfyOfu5a5kKm1g9S",
+      "expiresAt": 1774511963797,
+      "createdAt": "2026-03-26T07:49:23.797Z"
+    }
+  }
+}

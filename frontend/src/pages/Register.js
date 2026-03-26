@@ -11,8 +11,9 @@ const BAR_COLOR      = ['','bg-danger','bg-warn','bg-green-eco'];
 
 export default function Register() {
   const nav = useNavigate();
-  const [pwd, setPwd] = useState('StrongPass1!');
-  const [email, setEmail] = useState('aryan@vnit.ac.in');
+  const [pwd, setPwd] = useState('');
+  const [email, setEmail] = useState('');
+  const [year, setYear] = useState('');
   const strength = getStrength(pwd);
   const { toast, showToast, hideToast } = useToast();
 
@@ -56,10 +57,10 @@ export default function Register() {
 
         {/* Name Row */}
         <div className="grid grid-cols-2 gap-3.5 mb-4">
-          {[['FIRST NAME','Aryan','text'],['LAST NAME','Sharma','text']].map(([lbl, val, type]) => (
+          {[['FIRST NAME','First name','text'],['LAST NAME','Last name','text']].map(([lbl, val, type]) => (
             <div key={lbl}>
               <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">{lbl}</label>
-              <input type={type} defaultValue={val}
+              <input type={type} placeholder={val}
                      className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
                                 focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
             </div>
@@ -75,13 +76,14 @@ export default function Register() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="yourname@college.edu.in"
                    className="w-full bg-s2 border border-border rounded-xl pl-12 pr-4 py-3.5 text-offwhite text-[15px] outline-none
                               focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
           </div>
           <div className="flex items-center gap-1.5 bg-[rgba(61,255,110,0.07)] border border-[rgba(61,255,110,0.13)]
                           rounded-lg px-3.5 py-2.5 mt-2">
             <span>✅</span>
-            <span className="text-xs text-muted">Valid <strong className="text-green-eco font-semibold">.edu.in address detected</strong> — we'll send a verification OTP</span>
+            <span className="text-xs text-muted">We'll send a verification OTP (demo accepts any email)</span>
           </div>
         </div>
 
@@ -89,16 +91,27 @@ export default function Register() {
         <div className="grid grid-cols-2 gap-3.5 mb-4">
           <div>
             <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">COLLEGE / UNIVERSITY</label>
-            <input type="text" defaultValue="VNIT Nagpur"
+            <input
+              type="text"
+              placeholder="e.g., VNIT Nagpur"
                    className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
                               focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
           </div>
           <div>
             <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">YEAR OF STUDY</label>
-            <select className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
-                               focus:border-green-eco transition-all">
+            <select
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
+                               focus:border-green-eco transition-all"
+            >
+              <option value="" disabled>
+                Select year
+              </option>
               {['1st Year','2nd Year','3rd Year','4th Year','Postgraduate'].map(y => (
-                <option key={y} selected={y==='3rd Year'}>{y}</option>
+                <option key={y} value={y}>
+                  {y}
+                </option>
               ))}
             </select>
           </div>
@@ -132,6 +145,10 @@ export default function Register() {
           type="button"
           onClick={async () => {
             try {
+              if (!email.trim() || !pwd) {
+                showToast('Enter your college email and password.');
+                return;
+              }
               await register(email, pwd);
               showToast('Verification code sent to your email.');
               nav(`/verify?email=${encodeURIComponent(email)}`);

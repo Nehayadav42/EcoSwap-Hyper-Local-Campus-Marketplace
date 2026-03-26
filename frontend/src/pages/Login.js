@@ -8,8 +8,8 @@ import { setToken } from '../auth/session';
 export default function Login() {
   const nav = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
-  const [email, setEmail] = useState('aryan@vnit.ac.in');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { toast, showToast, hideToast } = useToast();
 
   return (
@@ -64,7 +64,9 @@ export default function Login() {
           <div className="flex items-center gap-1.5 bg-[rgba(61,255,110,0.07)] border border-[rgba(61,255,110,0.13)]
                           rounded-lg px-3.5 py-2.5 mt-2">
             <span>🔒</span>
-            <span className="text-xs text-muted">Only <strong className="text-green-eco font-semibold">.edu.in addresses</strong> are accepted</span>
+            <span className="text-xs text-muted">
+              Campus email recommended (demo accepts any email)
+            </span>
           </div>
         </div>
 
@@ -102,6 +104,10 @@ export default function Login() {
           type="button"
           onClick={async () => {
             try {
+              if (!email.trim() || !password) {
+                showToast('Enter your college email and password.');
+                return;
+              }
               const result = await login(email, password);
               setToken(result.token);
               showToast('Signed in successfully.');
