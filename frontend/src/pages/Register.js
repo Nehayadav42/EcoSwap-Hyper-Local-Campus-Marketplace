@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Toast, { useToast } from '../components/Toast';
+import { register } from '../api/authApi';
 
 const getStrength = pwd => pwd.length === 0 ? 0 : pwd.length < 6 ? 1 : pwd.length < 10 ? 2 : 3;
 const STRENGTH_LABEL = ['','Weak','Medium','Strong'];
@@ -11,6 +12,7 @@ const BAR_COLOR      = ['','bg-danger','bg-warn','bg-green-eco'];
 export default function Register() {
   const nav = useNavigate();
   const [pwd, setPwd] = useState('StrongPass1!');
+  const [email, setEmail] = useState('aryan@vnit.ac.in');
   const strength = getStrength(pwd);
   const { toast, showToast, hideToast } = useToast();
 
@@ -33,8 +35,7 @@ export default function Register() {
         {/* Google */}
         <button
           onClick={() => {
-            showToast('Signed up with Google (.edu.in) (demo).');
-            nav('/verify');
+            showToast('Google sign-up is not wired up yet. Use email/password.');
           }}
           className="w-full flex items-center gap-3 bg-s2 border border-[rgba(255,255,255,0.06)]
                            text-offwhite px-5 py-3.5 rounded-xl text-[15px] font-semibold mb-5
@@ -70,7 +71,10 @@ export default function Register() {
           <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">COLLEGE EMAIL</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[17px] pointer-events-none">📧</span>
-            <input type="email" defaultValue="aryan@vnit.ac.in"
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
                    className="w-full bg-s2 border border-border rounded-xl pl-12 pr-4 py-3.5 text-offwhite text-[15px] outline-none
                               focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
           </div>
@@ -124,7 +128,17 @@ export default function Register() {
           )}
         </div>
 
-        <button onClick={() => nav('/verify')}
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await register(email, pwd);
+              showToast('Verification code sent to your email.');
+              nav(`/verify?email=${encodeURIComponent(email)}`);
+            } catch (e) {
+              showToast(e?.message || 'Sign up failed.');
+            }
+          }}
                 className="w-full bg-green-eco text-bg py-3.5 rounded-xl text-base font-bold
                            hover:bg-[#72ff97] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200">
           Create Account & Verify Email →

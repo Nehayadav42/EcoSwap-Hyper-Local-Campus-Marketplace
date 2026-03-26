@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Toast, { useToast } from '../components/Toast';
+import { clearToken } from '../auth/session';
 
 const NAV_ITEMS = [
   { ico:'📊', label:'Dashboard',    path:'/dashboard', active:true  },
@@ -118,7 +119,14 @@ export default function Dashboard() {
         >
           <span className="text-lg">⚙️</span> Settings
         </button>
-        <button onClick={() => nav('/')} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-muted hover:bg-s2 hover:text-offwhite w-full text-left transition-all">
+        <button
+          type="button"
+          onClick={() => {
+            clearToken();
+            nav('/login');
+          }}
+          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-muted hover:bg-s2 hover:text-offwhite w-full text-left transition-all"
+        >
           <span className="text-lg">🚪</span> Sign Out
         </button>
       </div>

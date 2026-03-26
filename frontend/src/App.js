@@ -10,6 +10,7 @@ import Chat      from './pages/Chat';
 import Dashboard from './pages/Dashboard';
 import Leaderboard from './pages/Leaderboard';
 import Sell from './pages/Sell';
+import RequireAuth from './components/RequireAuth';
 
 export default function App() {
   return (
@@ -20,10 +21,10 @@ export default function App() {
         <Route path="/login"     element={<Login />} />
         <Route path="/register"  element={<Register />} />
         <Route path="/verify"    element={<Verify />} />
-        <Route path="/chat"      element={<Chat />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/sell" element={<Sell />} />
+        <Route path="/chat"      element={<RequireAuth><Chat /></RequireAuth>} />
+        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+        <Route path="/leaderboard" element={<RequireAuth><Leaderboard /></RequireAuth>} />
+        <Route path="/sell" element={<RequireAuth><Sell /></RequireAuth>} />
         <Route path="*"          element={<Navigate to="/" />} />
       </Routes>
       <TabBar />

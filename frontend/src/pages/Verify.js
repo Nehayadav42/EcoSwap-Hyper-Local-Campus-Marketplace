@@ -1,13 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Toast, { useToast } from '../components/Toast';
+import { resend, verify } from '../api/authApi';
+import { setToken } from '../auth/session';
 
-const TOTAL = 167;
+const TOTAL = 600;
 
 export default function Verify() {
   const nav = useNavigate();
-  const [otp, setOtp] = useState(['4','8','3','','','']);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const email = params.get('email') || '';
+
+  const [otp, setOtp] = useState(['','','','','','']);
   const [secs, setSecs] = useState(TOTAL);
   const refs = useRef([]);
   const { toast, showToast, hideToast } = useToast();
@@ -16,6 +22,13 @@ export default function Verify() {
     const t = setInterval(() => setSecs(s => s > 0 ? s - 1 : 0), 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    if (!email) {
+      showToast('Missing email. Please register again.');
+      nav('/register');
+    }
+  }, [email, nav, showToast]);
 
   const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   const progress = (secs / TOTAL) * 100;
@@ -40,7 +53,7 @@ export default function Verify() {
 
         <h1 className="font-syne text-2xl font-extrabold mb-2">Check your inbox</h1>
         <p className="text-sm text-muted">We sent a 6-digit code to</p>
-        <p className="text-sm font-semibold text-green-eco mb-6">aryan@vnit.ac.in</p>
+        <p className="text-sm font-semibold text-green-eco mb-6">{email || 'your email'}</p>
 
         {/* Progress bar */}
         <div className="bg-s2 rounded-full h-1 overflow-hidden mb-2">
@@ -66,13 +79,21 @@ export default function Verify() {
         </div>
 
         <button
-          onClick={() => {
-            if (otpValue.length !== 6) {
-              showToast('Enter the full 6-digit code first.');
-              return;
+          type="button"
+          onClick={async () => {
+            try {
+              if (otpValue.length !== 6) {
+                showToast('Enter the full 6-digit code first.');
+                return;
+              }
+
+              const result = await verify(email, otpValue);
+              setToken(result.token);
+              showToast('Verified. Welcome to UniThrift!');
+              nav('/dashboard');
+            } catch (e) {
+              showToast(e?.message || 'Verification failed.');
             }
-            showToast('Verified (demo). Entering UniThrift...');
-            nav('/dashboard');
           }}
                 className="w-full bg-green-eco text-bg py-3.5 rounded-xl text-base font-bold
                            hover:bg-[#72ff97] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200">
@@ -84,10 +105,17 @@ export default function Verify() {
           <button
             type="button"
             onClick={() => {
-              setSecs(TOTAL);
-              setOtp(['','','','','','']);
-              refs.current[0]?.focus();
-              showToast('New code sent (demo).');
+              (async () => {
+                try {
+                  await resend(email);
+                  setSecs(TOTAL);
+                  setOtp(['','','','','','']);
+                  refs.current[0]?.focus();
+                  showToast('New code sent.');
+                } catch (e) {
+                  showToast(e?.message || 'Could not resend code.');
+                }
+              })();
             }}
             className="text-green-eco font-semibold bg-transparent border-none p-0"
           >
@@ -109,7 +137,7 @@ export default function Verify() {
         </div>
 
         <p className="text-sm text-muted mt-4">
-          <button onClick={() => nav('/login')} className="text-green-eco font-semibold bg-transparent border-none p-0">
+          <button type="button" onClick={() => nav('/login')} className="text-green-eco font-semibold bg-transparent border-none p-0">
             ← Back to login
           </button>
         </p>

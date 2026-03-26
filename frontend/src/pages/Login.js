@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Toast, { useToast } from '../components/Toast';
+import { login } from '../api/authApi';
+import { setToken } from '../auth/session';
 
 export default function Login() {
   const nav = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
+  const [email, setEmail] = useState('aryan@vnit.ac.in');
+  const [password, setPassword] = useState('password123');
   const { toast, showToast, hideToast } = useToast();
 
   return (
@@ -27,8 +31,7 @@ export default function Login() {
         {/* Google */}
         <button
           onClick={() => {
-            showToast('Signed in with Google (.edu.in) (demo).');
-            nav('/dashboard');
+            showToast('Google sign-in is not wired up yet. Use email/password.');
           }}
           className="w-full flex items-center gap-3 bg-s2 border border-[rgba(255,255,255,0.06)]
                            text-offwhite px-5 py-3.5 rounded-xl text-[15px] font-semibold mb-5
@@ -50,7 +53,11 @@ export default function Login() {
           <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">COLLEGE EMAIL</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[17px] pointer-events-none">📧</span>
-            <input type="email" defaultValue="aryan@vnit.ac.in" placeholder="yourname@college.edu.in"
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="yourname@college.edu.in"
                    className="w-full bg-s2 border border-border rounded-xl pl-12 pr-4 py-3.5 text-offwhite text-[15px] outline-none
                               focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
           </div>
@@ -75,17 +82,39 @@ export default function Login() {
           </div>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[17px] pointer-events-none">🔑</span>
-            <input type={showPwd ? 'text' : 'password'} defaultValue="password123" placeholder="••••••••"
+            <input
+              type={showPwd ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
                    className="w-full bg-s2 border border-border rounded-xl pl-12 pr-14 py-3.5 text-offwhite text-[15px] outline-none
                               focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
-            <button onClick={() => setShowPwd(!showPwd)}
+            <button
+              type="button"
+              onClick={() => setShowPwd(!showPwd)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-green-eco font-semibold bg-transparent border-none">
               {showPwd ? 'Hide' : 'Show'}
             </button>
           </div>
         </div>
 
-        <button onClick={() => nav('/dashboard')}
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const result = await login(email, password);
+              setToken(result.token);
+              showToast('Signed in successfully.');
+              nav('/dashboard');
+            } catch (e) {
+              if (e?.status === 403) {
+                showToast('Email not verified. Enter OTP to continue.');
+                nav(`/verify?email=${encodeURIComponent(email)}`);
+                return;
+              }
+              showToast(e?.message || 'Sign in failed.');
+            }
+          }}
                 className="w-full bg-green-eco text-bg py-3.5 rounded-xl text-base font-bold mt-1.5
                            hover:bg-[#72ff97] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200">
           Sign In →
