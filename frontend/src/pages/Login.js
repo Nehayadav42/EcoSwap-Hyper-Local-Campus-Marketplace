@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Toast, { useToast } from '../components/Toast';
-import { login } from '../api/authApi';
+import { login, me } from '../api/authApi';
 import { setToken } from '../auth/session';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const nav = useNavigate();
+  const { setUser } = useAuth();
   const [showPwd, setShowPwd] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -110,6 +112,8 @@ export default function Login() {
               }
               const result = await login(email, password);
               setToken(result.token);
+              const profile = await me();
+              setUser(profile);
               showToast('Signed in successfully.');
               nav('/dashboard');
             } catch (e) {

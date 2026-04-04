@@ -13,6 +13,9 @@ export default function Register() {
   const nav = useNavigate();
   const [pwd, setPwd] = useState('');
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [college, setCollege] = useState('');
   const [year, setYear] = useState('');
   const strength = getStrength(pwd);
   const { toast, showToast, hideToast } = useToast();
@@ -57,14 +60,28 @@ export default function Register() {
 
         {/* Name Row */}
         <div className="grid grid-cols-2 gap-3.5 mb-4">
-          {[['FIRST NAME','First name','text'],['LAST NAME','Last name','text']].map(([lbl, val, type]) => (
-            <div key={lbl}>
-              <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">{lbl}</label>
-              <input type={type} placeholder={val}
-                     className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
-                                focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
-            </div>
-          ))}
+          <div>
+            <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">FIRST NAME</label>
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
+                         focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">LAST NAME</label>
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
+                         focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all"
+            />
+          </div>
         </div>
 
         {/* Email */}
@@ -93,9 +110,12 @@ export default function Register() {
             <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">COLLEGE / UNIVERSITY</label>
             <input
               type="text"
+              value={college}
+              onChange={(e) => setCollege(e.target.value)}
               placeholder="e.g., VNIT Nagpur"
-                   className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
-                              focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all" />
+              className="w-full bg-s2 border border-border rounded-xl px-4 py-3.5 text-offwhite text-[15px] outline-none
+                         focus:border-green-eco focus:shadow-[0_0_0_3px_rgba(61,255,110,0.12)] transition-all"
+            />
           </div>
           <div>
             <label className="block text-[11.5px] font-bold text-muted tracking-[0.6px] mb-2">YEAR OF STUDY</label>
@@ -149,7 +169,16 @@ export default function Register() {
                 showToast('Enter your college email and password.');
                 return;
               }
-              await register(email, pwd);
+              if (!firstName.trim()) {
+                showToast('Please enter your first name so your dashboard can show your name.');
+                return;
+              }
+              await register(email, pwd, {
+                firstName,
+                lastName,
+                college,
+                yearOfStudy: year
+              });
               showToast('Verification code sent to your email.');
               nav(`/verify?email=${encodeURIComponent(email)}`);
             } catch (e) {

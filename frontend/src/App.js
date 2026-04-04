@@ -11,10 +11,12 @@ import Dashboard from './pages/Dashboard';
 import Leaderboard from './pages/Leaderboard';
 import Sell from './pages/Sell';
 import RequireAuth from './components/RequireAuth';
+import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
       <Navbar />
       <Routes>
         <Route path="/"          element={<Landing />} />
@@ -28,6 +30,7 @@ export default function App() {
         <Route path="*"          element={<Navigate to="/" />} />
       </Routes>
       <TabBar />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

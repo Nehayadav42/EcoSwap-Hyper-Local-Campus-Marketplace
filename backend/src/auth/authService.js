@@ -24,7 +24,12 @@ function signToken({ email, verified }) {
   return jwt.sign({ sub: email, verified }, secret, { expiresIn });
 }
 
-async function registerUser({ email, password }) {
+function trimStr(v) {
+  if (typeof v !== 'string') return '';
+  return v.trim();
+}
+
+async function registerUser({ email, password, firstName, lastName, college, yearOfStudy }) {
   const requireEduEmail = process.env.REQUIRE_EDU_EMAIL === 'true';
   if (requireEduEmail && !isEduInEmail(email)) {
     return { ok: false, statusCode: 400, error: 'Only .edu.in emails are accepted.' };
@@ -42,11 +47,20 @@ async function registerUser({ email, password }) {
   const codeHash = await hashText(code);
   const otpExpiresAt = nowMs() + ttlMs();
 
+  const fn = trimStr(firstName) || (existing && existing.firstName) || '';
+  const ln = trimStr(lastName) || (existing && existing.lastName) || '';
+  const col = trimStr(college) || (existing && existing.college) || '';
+  const yr = trimStr(yearOfStudy) || (existing && existing.yearOfStudy) || '';
+
   db.users[email.toLowerCase()] = {
     email: email.toLowerCase(),
     passwordHash,
     verified: existing ? existing.verified : false,
-    createdAt: existing ? existing.createdAt : new Date().toISOString()
+    createdAt: existing ? existing.createdAt : new Date().toISOString(),
+    firstName: fn,
+    lastName: ln,
+    college: col,
+    yearOfStudy: yr
   };
 
   db.otps[email.toLowerCase()] = {
@@ -107,6 +121,21 @@ async function verifyEmailOtp({ email, code }) {
   return { ok: true, token };
 }
 
+function getUserProfile(email) {
+  const db = readDb();
+  const key = String(email || '').toLowerCase();
+  const user = db.users[key];
+  if (!user) return null;
+  return {
+    email: user.email,
+    verified: !!user.verified,
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    college: user.college || '',
+    yearOfStudy: user.yearOfStudy || ''
+  };
+}
+
 async function login({ email, password }) {
   const db = readDb();
   const key = email.toLowerCase();
@@ -128,6 +157,7 @@ module.exports = {
   registerUser,
   resendCode,
   verifyEmailOtp,
-  login
+  login,
+  getUserProfile
 };
 

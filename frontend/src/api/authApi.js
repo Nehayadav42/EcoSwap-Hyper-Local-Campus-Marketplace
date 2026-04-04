@@ -1,10 +1,17 @@
 import { apiFetch } from './apiClient';
 import { getToken } from '../auth/session';
 
-async function register(email, password) {
+async function register(email, password, profile = {}) {
   return apiFetch('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({
+      email,
+      password,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      college: profile.college,
+      yearOfStudy: profile.yearOfStudy
+    })
   });
 }
 

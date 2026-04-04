@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import Toast, { useToast } from '../components/Toast';
-import { resend, verify } from '../api/authApi';
+import { resend, verify, me } from '../api/authApi';
 import { setToken } from '../auth/session';
+import { useAuth } from '../context/AuthContext';
 
 const TOTAL = 600;
 
 export default function Verify() {
+  const { setUser } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -89,6 +91,8 @@ export default function Verify() {
 
               const result = await verify(email, otpValue);
               setToken(result.token);
+              const profile = await me();
+              setUser(profile);
               showToast('Verified. Welcome to UniThrift!');
               nav('/dashboard');
             } catch (e) {
