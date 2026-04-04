@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const TABS = [
   { label: '🌿 Landing',   path: '/' },
+  { label: '🏪 Market',    path: '/marketplace' },
   { label: '🔐 Login',     path: '/login' },
   { label: '📝 Register',  path: '/register' },
   { label: '✉️ Verify',    path: '/verify' },

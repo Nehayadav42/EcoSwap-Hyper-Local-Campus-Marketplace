@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getToken, clearToken } from '../auth/session';
+import { useAuth } from '../context/AuthContext';
 
 const AUTH_ROUTES = ['/login', '/register', '/verify'];
 const NAV_LINKS = [
-  { path: '/', label: 'Marketplace' },
+  { path: '/marketplace', label: 'Marketplace' },
   { path: '/dashboard', label: 'Dashboard' },
   { path: '/leaderboard', label: 'Leaderboard' },
   { path: '/sell', label: 'Sell' }
@@ -12,6 +14,8 @@ const NAV_LINKS = [
 export default function Navbar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
+  const { clearUser } = useAuth();
+  const loggedIn = Boolean(getToken());
   if (AUTH_ROUTES.includes(pathname)) return null;
 
   return (
@@ -46,18 +50,45 @@ export default function Navbar() {
 
       {/* Buttons */}
       <div className="flex items-center gap-2.5">
-        <button
-          onClick={() => nav('/login')}
-          className="border border-border text-offwhite px-5 py-2 rounded-full text-sm font-medium
-                     hover:border-green-eco hover:text-green-eco transition-all duration-200">
-          Log in
-        </button>
-        <button
-          onClick={() => nav('/register')}
-          className="bg-green-eco text-bg px-5 py-2 rounded-full text-sm font-bold
-                     hover:bg-[#6aff93] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200">
-          Get Started →
-        </button>
+        {loggedIn ? (
+          <>
+            <button
+              type="button"
+              onClick={() => nav('/dashboard')}
+              className="border border-border text-offwhite px-5 py-2 rounded-full text-sm font-medium
+                         hover:border-green-eco hover:text-green-eco transition-all duration-200">
+              Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearToken();
+                clearUser();
+                nav('/');
+              }}
+              className="bg-s2 border border-[rgba(255,92,92,0.35)] text-danger px-5 py-2 rounded-full text-sm font-semibold
+                         hover:bg-[rgba(255,92,92,0.08)] transition-all duration-200">
+              Log out
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => nav('/login')}
+              className="border border-border text-offwhite px-5 py-2 rounded-full text-sm font-medium
+                         hover:border-green-eco hover:text-green-eco transition-all duration-200">
+              Log in
+            </button>
+            <button
+              type="button"
+              onClick={() => nav('/register')}
+              className="bg-green-eco text-bg px-5 py-2 rounded-full text-sm font-bold
+                         hover:bg-[#6aff93] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200">
+              Get Started →
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );

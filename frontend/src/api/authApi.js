@@ -41,5 +41,14 @@ async function me() {
   return apiFetch('/api/auth/me', { token });
 }
 
-export { register, login, verify, resend, me };
+async function patchProfile(payload) {
+  const token = getToken();
+  return apiFetch('/api/auth/profile', {
+    method: 'PATCH',
+    token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export { register, login, verify, resend, me, patchProfile };
 

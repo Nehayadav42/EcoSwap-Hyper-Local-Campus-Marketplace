@@ -7,7 +7,8 @@ const {
   resendCode,
   verifyEmailOtp,
   login,
-  getUserProfile
+  getUserProfile,
+  updateProfile
 } = require('./authService');
 
 const router = express.Router();
@@ -61,12 +62,26 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-router.get('/me', requireAuth(), (req, res) => {
-  const profile = getUserProfile(req.user.sub);
-  if (!profile) {
-    return res.status(404).json({ error: 'User not found' });
+router.get('/me', requireAuth(), async (req, res, next) => {
+  try {
+    const profile = await getUserProfile(req.user.sub);
+    if (!profile) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    return res.json(profile);
+  } catch (e) {
+    return next(e);
   }
-  return res.json(profile);
+});
+
+router.patch('/profile', requireAuth(), async (req, res, next) => {
+  try {
+    const result = await updateProfile(req.user.sub, req.body || {});
+    if (!result.ok) return res.status(result.statusCode).json({ error: result.error });
+    return res.json(result.profile);
+  } catch (e) {
+    return next(e);
+  }
 });
 
 // Example protected endpoint for authorization testing.

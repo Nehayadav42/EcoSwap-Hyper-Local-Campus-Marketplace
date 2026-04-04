@@ -14,14 +14,6 @@ const FEATURES = [
   { ico:'💬', t:'Live Haggling Chat',       d:'WhatsApp-style chat with offer cards. Counter, accept, decline — no awkward emails.' },
   { ico:'✨', t:'AI Listing Assistant',     d:'Upload a photo and AI writes a perfect product description — titles, condition, everything.' },
 ];
-const CATS = [
-  { ico:'📚', n:'Books',       c:'2,340' },
-  { ico:'💻', n:'Electronics', c:'980' },
-  { ico:'🔬', n:'Lab Gear',    c:'430' },
-  { ico:'🛏', n:'Hostel',      c:'1,120' },
-  { ico:'🖊', n:'Stationery',  c:'670' },
-  { ico:'🎸', n:'Others',      c:'560' },
-];
 const TESTIS = [
   { q:"Sold my entire 3rd year book stack in 2 days. Made ₹1,800 I didn't expect. The AI description feature is genuinely magical.", name:'Aryan Sharma',  role:'CSE · VNIT Nagpur',      av:'🧑' },
   { q:'Got my entire lab kit for ₹600 instead of ₹2,800. The Carbon Tracker showed I saved 6 kg CO₂ — that genuinely made me happy.', name:'Priya Kumari',  role:'Chem Engg · IIT Bombay', av:'👩' },
@@ -82,6 +74,7 @@ export default function Landing() {
 
           <div className="flex gap-3.5 mt-9 items-center animate-fade-up animate-delay-3">
             <button
+              type="button"
               onClick={() => nav('/register')}
               className="bg-green-eco text-bg px-8 py-3.5 rounded-full text-base font-bold
                          flex items-center gap-2.5 hover:bg-[#72ff97] hover:-translate-y-1
@@ -89,7 +82,8 @@ export default function Landing() {
               Start Selling Free <span>→</span>
             </button>
             <button
-              onClick={() => nav('/login')}
+              type="button"
+              onClick={() => nav('/marketplace')}
               className="border border-border text-offwhite px-7 py-3.5 rounded-full text-[15px] font-medium
                          hover:border-green-eco hover:text-green-eco transition-all duration-200">
               Browse Listings
@@ -170,6 +164,30 @@ export default function Landing() {
         ))}
       </div>
 
+      {/* ── MARKETPLACE CTA ── */}
+      <section className="px-6 md:px-20 py-16 border-b border-[rgba(61,255,110,0.13)] bg-s1/30">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+          <div>
+            <SectionLabel>🏪 CAMPUS MARKETPLACE</SectionLabel>
+            <h2 className="font-syne text-3xl md:text-[36px] font-extrabold text-offwhite mt-2 leading-tight">
+              See what&apos;s for sale right now
+            </h2>
+            <p className="text-sm text-muted mt-3 max-w-lg leading-relaxed">
+              Real listings from students on your campus — books, gadgets, lab gear. Open the marketplace to browse,
+              chat with sellers, and arrange pickup.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => nav('/marketplace')}
+            className="shrink-0 bg-green-eco text-bg px-8 py-3.5 rounded-full text-base font-bold
+                       hover:bg-[#72ff97] hover:-translate-y-0.5 hover:shadow-glow-lg transition-all duration-200 w-fit"
+          >
+            Open marketplace →
+          </button>
+        </div>
+      </section>
+
       {/* ── HOW IT WORKS ── */}
       <section className="px-20 py-24">
         <SectionLabel>⚙️ HOW IT WORKS</SectionLabel>
@@ -222,27 +240,6 @@ export default function Landing() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── CATEGORIES ── */}
-      <section className="px-20 pb-24">
-        <SectionLabel>📦 CATEGORIES</SectionLabel>
-        <SectionH>Find anything <em className="text-green-eco not-italic">campus</em></SectionH>
-        <div className="grid grid-cols-6 gap-3.5 mt-12">
-          {CATS.map(c => (
-            <button
-              key={c.n}
-              type="button"
-              onClick={() => showToast(`${c.n} browsing is coming soon.`)}
-              className="bg-s1 border border-[rgba(255,255,255,0.06)] rounded-2xl p-6 text-center cursor-pointer
-                            hover:border-[rgba(61,255,110,0.13)] hover:bg-s2 hover:-translate-y-1 transition-all duration-200"
-            >
-              <div className="text-[36px] mb-2.5">{c.ico}</div>
-              <div className="text-sm font-semibold">{c.n}</div>
-              <div className="text-xs text-muted mt-0.5">{c.c} items</div>
-            </button>
-          ))}
         </div>
       </section>
 

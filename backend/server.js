@@ -1,4 +1,9 @@
-require('dotenv').config();
+const path = require('path');
+// Load .env from the backend folder (same place as server.js), not from whatever the shell cwd is.
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+if (!process.env.MONGODB_URI) {
+  require('dotenv').config({ path: path.join(__dirname, 'src', '.env') });
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -8,6 +13,7 @@ const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 
 const authRoutes = require('./src/auth/authRoutes');
+const itemRoutes = require('./src/items/itemRoutes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 const { required } = require('./src/config/env');
 
@@ -16,19 +22,9 @@ const app = express();
 required('JWT_SECRET');
 required('MONGODB_URI');
 
-// MongoDB connection (prints confirmation in the terminal).
 mongoose.set('strictQuery', true);
 
-console.log('Connecting to MongoDB Atlas...');
-mongoose
-  .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
-  .then(() => console.log('MongoDB connected ✅'))
-  .catch((err) => {
-    console.error('MongoDB connection error ❌');
-    console.error(err);
-  });
-
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', reason => {
   // eslint-disable-next-line no-console
   console.error('Unhandled rejection:', reason);
 });
@@ -57,12 +53,27 @@ app.use(
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/items', itemRoutes);
 
 app.use(errorHandler);
 
 const port = Number(process.env.PORT || 5000);
-app.listen(port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`EcoSwap backend listening on http://localhost:${port}`);
-});
 
+async function start() {
+  console.log('Connecting to MongoDB Atlas...');
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
+    console.log('MongoDB connected ✅');
+  } catch (err) {
+    console.error('MongoDB connection error ❌');
+    console.error(err);
+    process.exit(1);
+  }
+
+  app.listen(port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`EcoSwap backend listening on http://localhost:${port}`);
+  });
+}
+
+start();

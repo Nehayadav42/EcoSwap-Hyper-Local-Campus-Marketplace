@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import Toast, { useToast } from '../components/Toast';
 import { useNavigate } from 'react-router-dom';
+import { createItem } from '../api/itemsApi';
 
 export default function Sell() {
   const nav = useNavigate();
   const { toast, showToast, hideToast } = useToast();
 
-  const [title, setTitle] = useState('Engineering Maths Vol. 2');
-  const [price, setPrice] = useState('180');
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
   const [condition, setCondition] = useState('Good');
   const [isNegotiable, setIsNegotiable] = useState(true);
   const [aiDescription, setAiDescription] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <div className="pt-[62px] bg-bg min-h-screen font-dm px-6 py-10">
@@ -20,7 +23,7 @@ export default function Sell() {
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <h1 className="font-syne text-3xl font-extrabold text-green-eco">📦 Sell an Item</h1>
-            <p className="text-sm text-muted mt-1.5">Create a listing (demo). Buttons are fully clickable.</p>
+            <p className="text-sm text-muted mt-1.5">Publish to your team MongoDB items collection.</p>
           </div>
           <button
             type="button"
@@ -38,6 +41,7 @@ export default function Sell() {
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Engineering Maths Vol. 2"
                 className="w-full bg-s2 border border-border rounded-xl px-4 py-2.5 text-offwhite text-sm outline-none
                            focus:border-green-eco transition-all"
               />
@@ -49,6 +53,7 @@ export default function Sell() {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 inputMode="numeric"
+                placeholder="180"
                 className="w-full bg-s2 border border-border rounded-xl px-4 py-2.5 text-offwhite text-sm outline-none
                            focus:border-green-eco transition-all"
               />
@@ -80,6 +85,23 @@ export default function Sell() {
               <label htmlFor="negotiable" className="text-sm text-muted">
                 Negotiable
               </label>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-muted tracking-wider mb-2">
+                CONTACT PHONE (OPTIONAL)
+              </label>
+              <input
+                value={contactPhone}
+                onChange={e => setContactPhone(e.target.value)}
+                inputMode="tel"
+                placeholder="Shown to buyers after they open chat"
+                className="w-full bg-s2 border border-border rounded-xl px-4 py-2.5 text-offwhite text-sm outline-none
+                           focus:border-green-eco transition-all"
+              />
+              <p className="text-[11px] text-muted mt-1.5">
+                Or add a phone in Settings — it applies to all your listings when no number is set here.
+              </p>
             </div>
           </div>
 
@@ -113,17 +135,33 @@ export default function Sell() {
             <div className="flex items-center gap-3 mt-4 flex-wrap">
               <button
                 type="button"
-                onClick={() => {
+                disabled={submitting}
+                onClick={async () => {
                   if (!title.trim() || !price.trim()) {
                     showToast('Please provide a title and price.');
                     return;
                   }
-                  showToast('Listing submitted (demo).');
-                  nav('/dashboard');
+                  setSubmitting(true);
+                  try {
+                    await createItem({
+                      title: title.trim(),
+                      price,
+                      condition,
+                      isNegotiable,
+                      description: aiDescription.trim(),
+                      contactPhone: contactPhone.trim()
+                    });
+                    showToast('Listing saved to the database.');
+                    nav('/my-listings');
+                  } catch (e) {
+                    showToast(e?.message || 'Could not publish listing.');
+                  } finally {
+                    setSubmitting(false);
+                  }
                 }}
-                className="bg-green-eco text-bg px-6 py-3 rounded-full text-sm font-bold hover:bg-[#72ff97] transition-all"
+                className="bg-green-eco text-bg px-6 py-3 rounded-full text-sm font-bold hover:bg-[#72ff97] transition-all disabled:opacity-60"
               >
-                Publish Listing
+                {submitting ? 'Publishing…' : 'Publish Listing'}
               </button>
               <button
                 type="button"
@@ -146,9 +184,7 @@ export default function Sell() {
           </div>
         </div>
 
-        <div className="text-xs text-muted mt-4">
-          Tip: This is a UI-only demo. When you connect a backend, these buttons can call your APIs.
-        </div>
+        <div className="text-xs text-muted mt-4">Listings are tied to your logged-in email in MongoDB.</div>
       </div>
     </div>
   );
