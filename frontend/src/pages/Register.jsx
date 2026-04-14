@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [role, setRole] = useState('user');
 
   return (
     <div className="relative min-h-[calc(100vh-56px)] overflow-hidden px-4 py-10 sm:px-6">
@@ -17,6 +19,39 @@ const Register = () => {
         </p>
 
         <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Registering as</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setRole('user')}
+                className={`h-12 rounded-lg border px-4 text-sm font-semibold transition-colors ${
+                  role === 'user'
+                    ? 'border-eco bg-eco-light/60 text-eco'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                User
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole('artisan')}
+                className={`h-12 rounded-lg border px-4 text-sm font-semibold transition-colors ${
+                  role === 'artisan'
+                    ? 'border-eco bg-eco-light/60 text-eco'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Artisan
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {role === 'artisan'
+                ? 'Artisans can accept swaps, chat with users, and manage orders.'
+                : 'Users can upload waste, track swaps, and chat with artisans.'}
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Full name</label>
             <input
@@ -51,7 +86,10 @@ const Register = () => {
           </div>
 
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              localStorage.setItem('ecoswap_role', role);
+              navigate(role === 'artisan' ? '/artisan-dashboard' : '/dashboard');
+            }}
             className="w-full bg-eco text-white h-12 rounded-lg text-base font-semibold hover:bg-eco-dark transition-colors mt-4"
           >
             Create account →

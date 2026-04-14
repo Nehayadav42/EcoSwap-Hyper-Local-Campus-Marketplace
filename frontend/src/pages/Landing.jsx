@@ -4,8 +4,9 @@ import { Leaf, UploadCloud, ArrowRight, Star } from 'lucide-react';
 const Landing = () => {
   return (
     <div className="bg-white">
+
       {/* Hero Section */}
-      <div id="products" className="max-w-7xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-14 items-center border-b border-gray-100">
+      <div id="products" className="relative z-10 max-w-7xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-14 items-center border-b border-gray-100">
         <div>
           <div className="inline-flex items-center gap-2 bg-eco-light rounded-full px-4 py-2 mb-5">
             <Leaf className="w-4 h-4 text-eco" />
@@ -38,7 +39,7 @@ const Landing = () => {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 max-w-5xl mx-auto border-b border-gray-100 py-10">
+      <div className="relative z-10 grid grid-cols-3 max-w-5xl mx-auto border-b border-gray-100 py-10">
         <div className="text-center border-r border-gray-100">
           <div className="text-3xl font-bold text-eco">12,400+</div>
           <div className="text-sm text-gray-500">Swaps completed</div>
@@ -54,7 +55,7 @@ const Landing = () => {
       </div>
 
       {/* Steps Section */}
-      <div id="how-it-works" className="bg-gray-50 py-20">
+      <div id="how-it-works" className="relative z-10 bg-gray-50/80 backdrop-blur-sm py-20">
         <div className="max-w-5xl mx-auto px-8">
           <div className="text-xs font-bold text-eco uppercase tracking-widest mb-1">How it works</div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Three steps to a greener home</h2>
@@ -76,7 +77,7 @@ const Landing = () => {
         </div>
       </div>
 
-      <div id="about" className="bg-white py-14">
+      <div id="about" className="relative z-10 bg-white/90 backdrop-blur-sm py-14">
         <div className="max-w-5xl mx-auto px-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">About EcoSwap</h2>
           <p className="text-base text-gray-600 max-w-3xl mx-auto">

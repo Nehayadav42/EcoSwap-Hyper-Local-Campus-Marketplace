@@ -19,17 +19,16 @@ const Navbar = () => {
       {/* Dynamic Center Links (Only on Landing) */}
       {!isDashboard && !isAuth && (
         <div className="hidden md:flex gap-6">
-          <a href="#how-it-works" className="text-[13px] text-gray-600 hover:text-eco cursor-pointer">How it works</a>
-          <a href="#products" className="text-[13px] text-gray-600 hover:text-eco cursor-pointer">Products</a>
-          <Link to="/artisan" className="text-[13px] text-gray-600 hover:text-eco cursor-pointer">Artisans</Link>
-          <a href="#about" className="text-[13px] text-gray-600 hover:text-eco cursor-pointer">About</a>
+          <a href="#how-it-works" className="text-[16px] text-gray-600 hover:text-eco cursor-pointer">How it works</a>
+          <a href="#products" className="text-[16px] text-gray-600 hover:text-eco cursor-pointer">Products</a>
+          <a href="#about" className="text-[16px] text-gray-600 hover:text-eco cursor-pointer">About</a>
         </div>
       )}
 
       {/* Dynamic Right Side Info/Buttons */}
       {isDashboard ? (
         <div className="flex items-center gap-4">
-          <span className="text-[13px] text-gray-600">Hello, Rahul 👋</span>
+          <span className="text-[16px] text-gray-600">Hello, Rahul 👋</span>
           <Link to="/" className="bg-white text-eco border border-eco-border px-4 py-1.5 rounded-md text-xs font-semibold hover:bg-eco-light transition-colors">
             Logout
           </Link>

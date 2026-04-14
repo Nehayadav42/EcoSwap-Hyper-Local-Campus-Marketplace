@@ -23,7 +23,7 @@ const Sidebar = () => {
     return (
       <Link 
         to={item.path} 
-        className={`flex items-center gap-3 px-4 py-2.5 text-[13px] transition-colors ${
+        className={`flex items-center gap-3 px-4 py-2.5 text-[16px] transition-colors ${
           isActive ? 'bg-eco-light text-eco font-medium' : 'text-gray-600 hover:bg-eco-light hover:text-eco'
         }`}
       >
@@ -41,8 +41,8 @@ const Sidebar = () => {
           RK
         </div>
         <div>
-          <div className="text-[13px] font-semibold text-gray-900">Rahul Kumar</div>
-          <div className="text-[11px] text-gray-500">Eco member</div>
+          <div className="text-[16px] font-semibold text-gray-900">Rahul Kumar</div>
+          <div className="text-[14px] text-gray-500">Eco member</div>
         </div>
       </div>
 

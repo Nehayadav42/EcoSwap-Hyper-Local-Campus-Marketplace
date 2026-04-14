@@ -14,6 +14,7 @@ import MySwaps from './pages/MySwaps';
 import Chats from './pages/Chats';
 import Profile from './pages/Profile';
 import Artisan from './pages/Artisan';
+import ArtisanDashboard from './pages/ArtisanDashboard';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         {/* Protected/Dashboard Routes */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
           <Route path="/swaps" element={<MySwaps />} />
           <Route path="/myswap" element={<MySwaps />} />
           <Route path="/myswaps" element={<MySwaps />} />
