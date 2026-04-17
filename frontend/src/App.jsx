@@ -1,5 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+// Route Guards
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
+
 // Layouts
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
@@ -14,35 +18,33 @@ import MySwaps from './pages/MySwaps';
 import Chats from './pages/Chats';
 import Profile from './pages/Profile';
 import Artisan from './pages/Artisan';
-import ArtisanDashboard from './pages/ArtisanDashboard';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Route - Landing Page */}
+        {/* Public Route - Landing Page (Sab dekh sakte hain) */}
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Landing />} /> {/* Ab yeh asli Landing.jsx dikhayega */}
+          <Route path="/" element={<Landing />} />
         </Route>
 
-        {/* Auth Routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        {/* Auth Routes - Sirf bina login wale dekh sakte hain */}
+        <Route element={<PublicRoute />}>
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
         </Route>
 
-        {/* Protected/Dashboard Routes */}
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
-          <Route path="/swaps" element={<MySwaps />} />
-          <Route path="/myswap" element={<MySwaps />} />
-          <Route path="/myswaps" element={<MySwaps />} />
-          <Route path="/chats" element={<Chats />} />
-          <Route path="/chat" element={<Chats />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/artisan" element={<Artisan />} />
-          <Route path="/artisans" element={<Artisan />} />
+        {/* Protected Routes - Sirf logged-in users dekh sakte hain */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/swaps" element={<MySwaps />} />
+            <Route path="/chats" element={<Chats />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/artisan" element={<Artisan />} />
+          </Route>
         </Route>
       </Routes>
     </Router>
