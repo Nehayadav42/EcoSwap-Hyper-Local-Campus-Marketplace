@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 import toast from 'react-hot-toast';
+import { api } from '../lib/api';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const Register = () => {
     setLoading(true);
     try {
       // Backend ko data bhej rahe hain
-      const { data } = await axios.post('http://localhost:5000/api/auth/register', formData);
+      const { data } = await api.post('/api/auth/register', formData);
       toast.success(data.message);
       
       // Register hone ke baad user ko Login page par bhej do
@@ -30,7 +30,7 @@ const Register = () => {
   // Google Auth Logic (Same as Login)
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/google', {
+      const { data } = await api.post('/api/auth/google', {
         tokenId: credentialResponse.credential
       });
       
@@ -45,26 +45,20 @@ const Register = () => {
   };
 
   return (
-    <div className="grid md:grid-cols-2 min-h-[calc(100vh-56px)]">
-      {/* Left Side Banner */}
-      <div className="bg-eco p-12 flex flex-col justify-between hidden md:flex">
-        <div>
-          <h2 className="text-4xl font-bold text-white leading-tight mb-4">Join the EcoSwap community</h2>
-          <p className="text-lg text-eco-border leading-relaxed">Every swap you make keeps waste out of landfills.</p>
-        </div>
-        <div className="text-4xl font-bold text-eco-border">
-          320+<span className="block text-base font-normal mt-2">verified artisans ready to help</span>
-        </div>
-      </div>
+    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl rounded-2xl p-8">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Already a member?{' '}
+              <Link to="/login" className="text-eco font-semibold hover:underline">
+                Sign in instead
+              </Link>
+            </p>
+          </div>
 
-      {/* Right Side - Register Form */}
-      <div className="bg-white p-12 flex flex-col justify-center max-w-lg mx-auto w-full">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h2>
-        <p className="text-base text-gray-600 mb-8">
-          Already a member? <Link to="/login" className="text-eco font-semibold hover:underline">Sign in instead</Link>
-        </p>
-
-        <form className="space-y-4" onSubmit={handleManualRegister}>
+          <form className="space-y-4" onSubmit={handleManualRegister}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Full name</label>
             <input 
@@ -108,7 +102,7 @@ const Register = () => {
           </button>
         </form>
 
-        <div className="flex items-center gap-4 my-8">
+        <div className="flex items-center gap-4 my-7">
           <div className="flex-1 h-[1px] bg-gray-200"></div>
           <span className="text-sm text-gray-500">or sign up with</span>
           <div className="flex-1 h-[1px] bg-gray-200"></div>
@@ -124,6 +118,11 @@ const Register = () => {
             size="large"
             text="signup_with" // Yeh button ka text "Sign up with Google" kar dega
           />
+        </div>
+
+        <p className="text-xs text-gray-500 mt-6 text-center">
+          Tip: use your campus email for faster trust.
+        </p>
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 import toast from 'react-hot-toast';
+import { api } from '../lib/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+      const { data } = await api.post('/api/auth/login', {
         email,
         password
       });
@@ -35,7 +35,7 @@ const Login = () => {
   // Google Login Logic
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/google', {
+      const { data } = await api.post('/api/auth/google', {
         tokenId: credentialResponse.credential
       });
       
@@ -50,26 +50,20 @@ const Login = () => {
   };
 
   return (
-    <div className="grid md:grid-cols-2 min-h-[calc(100vh-56px)]">
-      {/* Left Side Banner (Same as before) */}
-      <div className="bg-eco p-12 flex flex-col justify-between hidden md:flex">
-        <div>
-          <h2 className="text-4xl font-bold text-white leading-tight mb-4">Welcome back to EcoSwap</h2>
-          <p className="text-lg text-eco-border leading-relaxed">Continue your journey of turning waste into wonderful creations.</p>
-        </div>
-        <div className="text-4xl font-bold text-eco-border">
-          840 kg<span className="block text-base font-normal mt-2">waste diverted this month</span>
-        </div>
-      </div>
+    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl rounded-2xl p-8">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-gray-900">Sign in</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              No account yet?{' '}
+              <Link to="/register" className="text-eco font-semibold hover:underline">
+                Create one free
+              </Link>
+            </p>
+          </div>
 
-      {/* Right Side - Login Form */}
-      <div className="bg-white p-12 flex flex-col justify-center max-w-lg mx-auto w-full">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h2>
-        <p className="text-base text-gray-600 mb-8">
-          No account yet? <Link to="/register" className="text-eco font-semibold hover:underline">Create one free</Link>
-        </p>
-
-        <form className="space-y-5" onSubmit={handleManualLogin}>
+          <form className="space-y-5" onSubmit={handleManualLogin}>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Email address</label>
             <input 
@@ -102,7 +96,7 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="flex items-center gap-4 my-8">
+        <div className="flex items-center gap-4 my-7">
           <div className="flex-1 h-[1px] bg-gray-200"></div>
           <span className="text-sm text-gray-500">or continue with</span>
           <div className="flex-1 h-[1px] bg-gray-200"></div>
@@ -118,6 +112,11 @@ const Login = () => {
             theme="outline"
             size="large"
           />
+        </div>
+
+        <p className="text-xs text-gray-500 mt-6 text-center">
+          By continuing, you agree to keep EcoSwap respectful and spam-free.
+        </p>
         </div>
       </div>
     </div>

@@ -3,6 +3,14 @@ import { LayoutDashboard, Package, MessageSquare, Users, UserCircle } from 'luci
 
 const Sidebar = () => {
   const location = useLocation();
+  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
+  const userName = userInfo?.name || 'Eco Warrior';
+  const userInitials = userName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'EW';
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -38,10 +46,10 @@ const Sidebar = () => {
       {/* User Profile Snippet */}
       <div className="p-4 border-b border-gray-200 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-eco-light flex items-center justify-center text-eco font-bold text-xs shrink-0">
-          RK
+          {userInitials}
         </div>
         <div>
-          <div className="text-[16px] font-semibold text-gray-900">Rahul Kumar</div>
+          <div className="text-[16px] font-semibold text-gray-900">{userName}</div>
           <div className="text-[14px] text-gray-500">Eco member</div>
         </div>
       </div>

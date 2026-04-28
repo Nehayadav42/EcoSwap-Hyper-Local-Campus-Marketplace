@@ -4,6 +4,9 @@ const dotenv = require('dotenv');
 const http = require('http');
 const connectDB = require('./config/db'); 
 const authRoutes = require('./routes/authRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const swapRoutes = require('./routes/swapRoutes');
+const aiRoutes = require('./routes/airoutes');
 
 dotenv.config();
 
@@ -17,6 +20,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/swaps', swapRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => {
   res.send('EcoSwap API is running! 🌍');

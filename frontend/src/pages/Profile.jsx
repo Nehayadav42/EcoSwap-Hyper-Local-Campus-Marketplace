@@ -3,6 +3,17 @@ import { motion } from 'framer-motion';
 import { MapPin, Award, Leaf, ShieldCheck, Bell, Camera, Mail } from 'lucide-react';
 
 const Profile = () => {
+  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
+  const userName = userInfo?.name || 'Eco Warrior';
+  const userEmail = userInfo?.email || '';
+  const [firstName = 'Eco', ...restName] = userName.split(' ').filter(Boolean);
+  const lastName = restName.join(' ');
+  const userInitials = [firstName, lastName]
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'EW';
+
   // State for interactive toggles
   const [notifications, setNotifications] = useState({
     email: true,
@@ -42,7 +53,7 @@ const Profile = () => {
           <div className="relative group cursor-pointer">
             <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-full p-2 shadow-lg">
               <div className="w-full h-full bg-eco-light text-eco rounded-full flex items-center justify-center text-4xl font-bold border-4 border-white">
-                RK
+                {userInitials}
               </div>
             </div>
             <div className="absolute inset-2 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -52,7 +63,7 @@ const Profile = () => {
           
           {/* User Info */}
           <div className="text-center md:text-left flex-1 mt-4 md:mt-0">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">Rahul Kumar</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">{userName}</h1>
             <p className="text-base text-gray-600 flex items-center justify-center md:justify-start gap-2">
               <MapPin className="w-4 h-4" /> Mumbai, Maharashtra
             </p>
@@ -127,11 +138,11 @@ const Profile = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">First Name</label>
-                  <input type="text" defaultValue="Rahul" className="w-full h-12 border border-gray-300 rounded-xl px-4 text-base text-gray-900 focus:border-eco focus:ring-1 focus:ring-eco focus:outline-none transition-colors bg-gray-50 focus:bg-white"/>
+                  <input type="text" defaultValue={firstName} className="w-full h-12 border border-gray-300 rounded-xl px-4 text-base text-gray-900 focus:border-eco focus:ring-1 focus:ring-eco focus:outline-none transition-colors bg-gray-50 focus:bg-white"/>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Last Name</label>
-                  <input type="text" defaultValue="Kumar" className="w-full h-12 border border-gray-300 rounded-xl px-4 text-base text-gray-900 focus:border-eco focus:ring-1 focus:ring-eco focus:outline-none transition-colors bg-gray-50 focus:bg-white"/>
+                  <input type="text" defaultValue={lastName} className="w-full h-12 border border-gray-300 rounded-xl px-4 text-base text-gray-900 focus:border-eco focus:ring-1 focus:ring-eco focus:outline-none transition-colors bg-gray-50 focus:bg-white"/>
                 </div>
               </div>
               
@@ -139,7 +150,7 @@ const Profile = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input type="email" defaultValue="rahul@example.com" className="w-full h-12 border border-gray-300 rounded-xl pl-12 pr-4 text-base text-gray-900 focus:border-eco focus:ring-1 focus:ring-eco focus:outline-none transition-colors bg-gray-50 focus:bg-white"/>
+                  <input type="email" defaultValue={userEmail} className="w-full h-12 border border-gray-300 rounded-xl pl-12 pr-4 text-base text-gray-900 focus:border-eco focus:ring-1 focus:ring-eco focus:outline-none transition-colors bg-gray-50 focus:bg-white"/>
                 </div>
               </div>
 

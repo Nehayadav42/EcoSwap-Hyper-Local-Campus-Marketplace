@@ -1,6 +1,9 @@
 import { Send } from 'lucide-react';
 
 const Chats = () => {
+  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
+  const firstName = userInfo?.name?.split(' ')[0] || 'there';
+
   return (
     <div className="max-w-5xl mx-auto h-[calc(100vh-120px)] bg-white rounded-xl border border-gray-200 shadow-sm flex overflow-hidden">
       
@@ -47,7 +50,7 @@ const Chats = () => {
         {/* Chat Bubbles */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <div className="max-w-[70%] bg-white border border-gray-200 p-4 rounded-2xl rounded-tl-sm shadow-sm">
-            <p className="text-base text-gray-800">Hello Rahul! I just received your denim package. Beautiful quality fabric — this will make a wonderful tote bag.</p>
+            <p className="text-base text-gray-800">Hello {firstName}! I just received your denim package. Beautiful quality fabric - this will make a wonderful tote bag.</p>
             <span className="text-xs text-gray-400 mt-2 block">10:30 AM</span>
           </div>
           
