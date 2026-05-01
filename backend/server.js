@@ -8,6 +8,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const swapRoutes = require('./routes/swapRoutes');
 const aiRoutes = require('./routes/airoutes');
 
+
 dotenv.config();
 
 // Connect to MongoDB
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/swaps', swapRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/swaps', swapRoutes);
 
 app.get('/', (req, res) => {
   res.send('EcoSwap API is running! 🌍');

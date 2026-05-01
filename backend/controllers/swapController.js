@@ -1,61 +1,57 @@
 const Swap = require('../models/Swap');
 
-// @desc    Create a new swap (after upload)
-// @route   POST /api/swaps
-// @access  Private
-const createSwap = async (req, res) => {
-  const { wasteImage, detectedMaterial, suggestedProducts } = req.body;
-
-  if (!wasteImage) {
-    return res.status(400).json({ message: 'wasteImage is required' });
-  }
-
+// 1. PUBLIC ROUTE: Landing page ke liye
+const getFeaturedSwaps = async (req, res) => {
   try {
-    const swap = await Swap.create({
-      user: req.user._id,
-      wasteImage,
-      detectedMaterial,
-      suggestedProducts,
-    });
-
-    return res.status(201).json(swap);
+    const featuredSwaps = await Swap.find()
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .populate('artisanAssigned', 'name'); 
+    res.status(200).json(featuredSwaps);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Failed to fetch featured swaps' });
   }
 };
 
-// @desc    Get current user's swaps
-// @route   GET /api/swaps
-// @access  Private
-const getMySwaps = async (req, res) => {
+// 2. ARTISAN ROUTE: Sirf pending orders dekhne ke liye
+const getPendingSwaps = async (req, res) => {
   try {
-    const swaps = await Swap.find({ user: req.user._id }).sort({ createdAt: -1 });
-    return res.json(swaps);
+    // Sirf wahi swaps lao jinka status 'pending_artisan' hai
+    const pendingSwaps = await Swap.find({ status: 'pending_artisan' })
+      .sort({ createdAt: -1 })
+      .populate('user', 'name'); // Jis user ne upload kiya hai uska naam bhi chahiye
+      
+    res.status(200).json(pendingSwaps);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("❌ Error fetching pending swaps:", error);
+    res.status(500).json({ message: 'Failed to fetch pending orders' });
   }
 };
 
-// @desc    Get dashboard stats for current user
-// @route   GET /api/swaps/stats
-// @access  Private
-const getMySwapStats = async (req, res) => {
+// 3. ARTISAN ROUTE: Order accept karne ke liye
+const acceptSwapOrder = async (req, res) => {
   try {
-    const total = await Swap.countDocuments({ user: req.user._id });
-    const active = await Swap.countDocuments({
-      user: req.user._id,
-      status: { $in: ['pending_artisan', 'accepted', 'upcycling'] },
-    });
+    const { id } = req.params; // URL se Swap ka ID milega
+    const { artisanId } = req.body; // Frontend se Artisan ka ID aayega
 
-    const latestActive = await Swap.findOne({
-      user: req.user._id,
-      status: { $in: ['pending_artisan', 'accepted', 'upcycling'] },
-    }).sort({ updatedAt: -1, createdAt: -1 });
+    const updatedSwap = await Swap.findByIdAndUpdate(
+      id,
+      { 
+        status: 'accepted', 
+        artisanAssigned: artisanId 
+      },
+      { new: true } // Updated data return karega
+    );
 
-    return res.json({ total, active, latestActive });
+    if (!updatedSwap) {
+      return res.status(404).json({ message: 'Swap order not found' });
+    }
+
+    res.status(200).json({ message: 'Order accepted successfully!', swap: updatedSwap });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("❌ Error accepting swap:", error);
+    res.status(500).json({ message: 'Failed to accept order' });
   }
 };
 
-module.exports = { createSwap, getMySwaps, getMySwapStats };
+module.exports = { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder };

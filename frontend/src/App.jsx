@@ -18,6 +18,7 @@ import MySwaps from './pages/MySwaps';
 import Chats from './pages/Chats';
 import Profile from './pages/Profile';
 import Artisan from './pages/Artisan';
+import ArtisanDashboard from './pages/ArtisanDashboard';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             <Route path="/chats" element={<Chats />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/artisan" element={<Artisan />} />
+            <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
           </Route>
         </Route>
       </Routes>
