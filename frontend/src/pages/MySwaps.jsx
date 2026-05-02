@@ -3,6 +3,7 @@ import { Package, CheckCircle, ArrowRight, User, LayoutDashboard } from 'lucide-
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 
 const MySwaps = () => {
   const navigate = useNavigate();
@@ -32,14 +33,20 @@ const MySwaps = () => {
   const handleCompleteOrder = async (swapId) => {
     try {
       await axios.put(`http://localhost:5000/api/swaps/${swapId}/complete`);
+      
+      // 👇 THE MAGIC: Confetti blast!
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#22c55e', '#16a34a', '#86efac'] // Eco theme green colors
+      });
+  
       toast.success('Awesome! Order marked as completed.');
-
-      // Update UI instantly
-      setSwaps(prevSwaps =>
-        prevSwaps.map(swap =>
-          swap._id === swapId ? { ...swap, status: 'completed' } : swap
-        )
-      );
+      
+      setSwaps(prevSwaps => prevSwaps.map(swap => 
+        swap._id === swapId ? { ...swap, status: 'completed' } : swap
+      ));
     } catch (error) {
       toast.error('Failed to complete order.');
     }

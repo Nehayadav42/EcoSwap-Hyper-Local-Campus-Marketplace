@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { UploadCloud, Leaf, Zap, ChevronRight, Award, Loader2, Sparkles, Clock, CheckCircle, X } from 'lucide-react';
+import { UploadCloud, Leaf, Award, Loader2, Sparkles, Clock, CheckCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -9,19 +9,22 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   
+  // --- STATES ---
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // Drag & Drop State
+  
   const [aiResult, setAiResult] = useState(null);
   const [activeOrders, setActiveOrders] = useState([]); 
   const [ecoStats, setEcoStats] = useState({ totalKg: 0, completedCount: 0 });
 
-  // 👇 NAYI STATES (Selection, Custom Idea aur Zoom ke liye)
   const [selectedIdea, setSelectedIdea] = useState(null);
   const [customIdea, setCustomIdea] = useState('');
   const [zoomedImage, setZoomedImage] = useState(null);
 
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
 
+  // --- FETCH DATA ---
   const fetchDashboardData = async () => {
     if (!userInfo._id) return;
     try {
@@ -38,8 +41,9 @@ const Dashboard = () => {
 
   useEffect(() => { fetchDashboardData(); }, [userInfo._id]);
 
+  // --- UPLOAD & DRAG HANDLERS ---
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const formData = new FormData();
@@ -63,7 +67,6 @@ const Dashboard = () => {
       const aiRes = await axios.post('http://localhost:5000/api/ai/analyze', { imageUrl, userId: userInfo._id });
       
       toast.success('AI found great ideas! Select one.');
-      // 👇 Updated to match new backend response
       setAiResult(aiRes.data.aiData); 
 
     } catch (error) {
@@ -75,22 +78,33 @@ const Dashboard = () => {
     }
   };
 
-  // 👇 NAYA FUNCTION: Finalize the Swap
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileChange({ target: { files: [file] } });
+  };
+
+  // --- CONFIRM ORDER ---
   const handleConfirmSwap = async () => {
     setIsUploading(true);
     try {
-      let finalProduct;
-      
-      if (selectedIdea === 'custom') {
-        finalProduct = {
-          title: "Custom Upcycle Request",
-          description: customIdea,
-          estimatedEcoScore: 1.5,
-          generatedImage: aiResult.wasteImage // Custom order ke liye original photo default rakhenge
-        };
-      } else {
-        finalProduct = selectedIdea;
-      }
+      let finalProduct = selectedIdea === 'custom' ? {
+        title: "Custom Upcycle Request",
+        description: customIdea,
+        estimatedEcoScore: 1.5,
+        generatedImage: aiResult.wasteImage 
+      } : selectedIdea;
 
       await axios.post('http://localhost:5000/api/swaps', {
         userId: userInfo._id,
@@ -103,7 +117,7 @@ const Dashboard = () => {
       setAiResult(null);
       setSelectedIdea(null);
       setCustomIdea('');
-      fetchDashboardData(); // Refresh list after saving
+      fetchDashboardData(); 
     } catch (error) {
       toast.error("Failed to submit request.");
     } finally {
@@ -121,7 +135,7 @@ const Dashboard = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
       
-      {/* --- ZOOM MODAL --- */}
+      {/* ZOOM MODAL */}
       <AnimatePresence>
         {zoomedImage && (
           <motion.div 
@@ -146,7 +160,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Level Card */}
+      {/* LEVEL CARD */}
       <div className="bg-gradient-to-r from-eco to-eco-dark rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
         <Leaf className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 rotate-12" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -169,7 +183,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* ACTION CARD (UPLOAD OR SELECT) */}
+        {/* LEFT COLUMN: UPLOAD / SELECTION */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[500px]">
           <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
@@ -184,7 +198,6 @@ const Dashboard = () => {
 
               <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Select an idea or write your own</p>
 
-              {/* SCROLLABLE LIST OF IDEAS */}
               <div className="space-y-3 overflow-y-auto pr-2 flex-1 pb-4 custom-scrollbar">
                 {aiResult.suggestedProducts?.slice(0, 3).map((product, idx) => (
                   <div 
@@ -192,17 +205,20 @@ const Dashboard = () => {
                     onClick={() => { setSelectedIdea(product); setCustomIdea(''); }}
                     className={`p-3 rounded-xl cursor-pointer flex gap-3 items-center transition-all border-2 ${selectedIdea?.title === product.title ? 'border-eco bg-eco-light/20 shadow-md' : 'border-gray-100 bg-white hover:border-eco-light'}`}
                   >
-                    {/* 👇 CLICK IMAGE TO ZOOM */}
-                    <div className="relative group shrink-0">
+                    <div className="relative group shrink-0 bg-gray-100 rounded-xl">
                       <img 
                         src={product.generatedImage} 
-                        onError={(e) => e.target.src = aiResult.wasteImage} // Fallback if Pollinations fails
+                        onError={(e) => {
+                          e.target.onError = null; 
+                          const shortName = encodeURIComponent(product.title.split(' ').slice(0, 3).join(' '));
+                          e.target.src = `https://placehold.co/400x400/dcfce7/166534?font=Montserrat&text=${shortName}`;
+                        }}
                         onClick={(e) => { e.stopPropagation(); setZoomedImage(product.generatedImage); }}
                         className="w-16 h-16 rounded-xl object-cover border border-gray-200 group-hover:opacity-80 transition-opacity"
                         alt={product.title}
                       />
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                        <span className="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">Zoom</span>
+                        <span className="bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">Zoom</span>
                       </div>
                     </div>
 
@@ -210,12 +226,10 @@ const Dashboard = () => {
                       <h4 className="text-sm font-bold text-gray-900">{product.title}</h4>
                       <p className="text-xs text-gray-500 mt-1 line-clamp-2">{product.description}</p>
                     </div>
-
                     {selectedIdea?.title === product.title && <CheckCircle className="w-5 h-5 text-eco shrink-0" />}
                   </div>
                 ))}
 
-                {/* CUSTOM IDEA OPTION */}
                 <div 
                   onClick={() => setSelectedIdea('custom')}
                   className={`p-4 rounded-xl cursor-pointer transition-all border-2 ${selectedIdea === 'custom' ? 'border-eco bg-eco-light/20' : 'border-gray-100 bg-white hover:border-eco-light'}`}
@@ -229,18 +243,17 @@ const Dashboard = () => {
                       autoFocus
                       value={customIdea}
                       onChange={(e) => setCustomIdea(e.target.value)}
-                      placeholder="E.g., Turn this into a desk organizer painted in blue..."
-                      className="w-full mt-2 text-sm p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-eco focus:ring-1 focus:ring-eco bg-white"
+                      placeholder="E.g., Turn this into a desk organizer..."
+                      className="w-full mt-2 text-sm p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-eco bg-white"
                       rows="2"
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
-                    <p className="text-xs text-gray-500 mt-1">Click here to write your own instructions for the artisan.</p>
+                    <p className="text-xs text-gray-500 mt-1">Click here to write your own instructions.</p>
                   )}
                 </div>
               </div>
 
-              {/* CONFIRM BUTTON */}
               <button 
                 onClick={handleConfirmSwap} 
                 disabled={!selectedIdea || (selectedIdea === 'custom' && !customIdea.trim()) || isUploading}
@@ -250,31 +263,47 @@ const Dashboard = () => {
               </button>
             </div>
           ) : (
-            <div onClick={() => !isUploading && !isAnalyzing && fileInputRef.current.click()} className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all duration-300 ${isUploading || isAnalyzing ? 'border-gray-200 bg-gray-50' : 'border-gray-300 hover:border-eco bg-gray-50 hover:bg-eco-light/30 cursor-pointer'}`}>
+            // DRAG AND DROP ZONE
+            <div 
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !isUploading && !isAnalyzing && fileInputRef.current.click()} 
+              className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all duration-300 ease-in-out ${
+                isUploading || isAnalyzing 
+                  ? 'border-gray-200 bg-gray-50' 
+                  : isDragging 
+                    ? 'border-eco bg-eco-light/40 scale-[1.02] shadow-inner' 
+                    : 'border-gray-300 hover:border-eco bg-gray-50 hover:bg-eco-light/30 cursor-pointer'
+              }`}
+            >
               {isAnalyzing ? (
-                <div className="flex flex-col items-center gap-4 text-center">
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center gap-4 text-center">
                   <div className="bg-white p-4 rounded-full shadow-sm relative">
                     <Sparkles className="w-8 h-8 text-amber-500 animate-pulse relative z-10" />
-                    <div className="absolute inset-0 bg-amber-200 rounded-full animate-ping opacity-50"></div>
                   </div>
                   <p className="text-base font-bold text-gray-900">AI is analyzing material...</p>
-                </div>
+                </motion.div>
               ) : isUploading ? (
                 <div className="flex flex-col items-center gap-4">
                   <div className="bg-white p-4 rounded-full shadow-sm"><Loader2 className="w-8 h-8 text-eco animate-spin" /></div>
                   <p className="text-base font-bold text-gray-900">Uploading image...</p>
                 </div>
               ) : (
-                <>
-                  <div className="bg-white p-4 rounded-full shadow-sm hover:scale-110 transition-transform duration-300"><UploadCloud className="w-8 h-8 text-eco" /></div>
-                  <p className="text-base font-bold text-gray-900 mt-2">Tap to upload waste photo</p>
-                </>
+                <motion.div whileHover={{ y: -5 }} className="flex flex-col items-center text-center">
+                  <div className={`p-4 rounded-full shadow-sm transition-all duration-300 ${isDragging ? 'bg-eco text-white scale-110' : 'bg-white text-eco'}`}>
+                    <UploadCloud className="w-8 h-8" />
+                  </div>
+                  <p className={`text-base font-bold mt-4 transition-colors ${isDragging ? 'text-eco' : 'text-gray-900'}`}>
+                    {isDragging ? 'Drop image right here!' : 'Click or Drag & Drop waste photo'}
+                  </p>
+                </motion.div>
               )}
             </div>
           )}
         </div>
 
-        {/* ACTIVE ORDERS SECTION */}
+        {/* RIGHT COLUMN: ACTIVE ORDERS */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[500px]">
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Clock className="w-5 h-5 text-eco"/> Active Orders</h2>
           <div className="space-y-3 overflow-y-auto pr-2 flex-1 custom-scrollbar">
