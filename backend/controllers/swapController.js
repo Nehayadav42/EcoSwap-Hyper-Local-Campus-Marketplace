@@ -56,21 +56,24 @@ const acceptSwapOrder = async (req, res) => {
 
 // @route   GET /api/swaps/my-active
 // @desc    Get active orders for the logged-in user
+// @route   GET /api/swaps/my-active
 const getMyActiveSwaps = async (req, res) => {
   try {
-    const { userId } = req.query; // Frontend se aayega
+    const { userId } = req.query; 
     
     if (!userId) {
       return res.status(400).json({ message: 'User ID required' });
     }
 
-    // Wo swaps laao jo is user ne upload kiye hain aur jo abhi chal rahe hain
+    // Yahan hum $or use kar rahe hain: 
+    // Ya toh upload karne wala yeh user ho, YA FIR order accept karne wala yeh artisan ho!
     const activeSwaps = await Swap.find({ 
-      user: userId,
-      status: { $in: ['pending_artisan', 'accepted', 'in_progress'] } // Delivered wale nahi dikhayenge
+      $or: [{ user: userId }, { artisanAssigned: userId }],
+      status: { $in: ['pending_artisan', 'accepted', 'in_progress'] } 
     })
     .sort({ updatedAt: -1 })
-    .populate('artisanAssigned', 'name');
+    .populate('artisanAssigned', 'name')
+    .populate('user', 'name'); // 👇 Yeh NAYA add kiya hai taaki artisan ko pata chale kiska kachra hai
 
     res.status(200).json(activeSwaps);
   } catch (error) {
@@ -79,6 +82,65 @@ const getMyActiveSwaps = async (req, res) => {
   }
 };
 
-// Update module.exports at the bottom:
-module.exports = { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps };
+// @route   GET /api/swaps/history
+// @desc    Get ALL swaps (history) for User or Artisan
+const getSwapHistory = async (req, res) => {
+  try {
+    const { userId } = req.query; 
+    
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID required' });
+    }
+
+    // $or logic: Ya toh maine upload kiya ho (User), ya maine accept kiya ho (Artisan)
+    const history = await Swap.find({ 
+      $or: [{ user: userId }, { artisanAssigned: userId }]
+    })
+    .sort({ createdAt: -1 }) // Latest pehle
+    .populate('artisanAssigned', 'name')
+    .populate('user', 'name'); 
+
+    res.status(200).json(history);
+  } catch (error) {
+    console.error("❌ Error fetching swap history:", error);
+    res.status(500).json({ message: 'Failed to fetch history' });
+  }
+};
+
+// @route   PUT /api/swaps/:id/complete
+// @desc    Mark an order as completed (By Artisan)
+const completeSwapOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedSwap = await Swap.findByIdAndUpdate(
+      id,
+      { status: 'completed' },
+      { new: true }
+    );
+
+    if (!updatedSwap) {
+      return res.status(404).json({ message: 'Swap order not found' });
+    }
+
+    res.status(200).json({ message: 'Order marked as completed!', swap: updatedSwap });
+  } catch (error) {
+    console.error("❌ Error completing swap:", error);
+    res.status(500).json({ message: 'Failed to complete order' });
+  }
+};
+
+// module.exports ko update karna mat bhoolna:
+module.exports = { 
+  getFeaturedSwaps, 
+  getPendingSwaps, 
+  acceptSwapOrder, 
+  getMyActiveSwaps, 
+  getSwapHistory,
+  completeSwapOrder // 👈 Yeh Naya Add Kiya
+};
+
+
+
+
 

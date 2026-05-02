@@ -5,6 +5,8 @@ const Sidebar = () => {
   const location = useLocation();
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
   const userName = userInfo?.name || 'Eco Warrior';
+  const isArtisan = userInfo?.role === 'artisan'; // 👈 Role check kar rahe hain
+
   const userInitials = userName
     .split(' ')
     .filter(Boolean)
@@ -12,19 +14,22 @@ const Sidebar = () => {
     .map((part) => part[0]?.toUpperCase())
     .join('') || 'EW';
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'My Swaps', path: '/swaps', icon: Package },
-    { name: 'Chats', path: '/chats', icon: MessageSquare },
-  ];
-
-  const discoverItems = [
-    { name: 'Find Artisans', path: '/artisan', icon: Users },
-  ];
-
-  const accountItems = [
-    { name: 'Profile', path: '/profile', icon: UserCircle },
-  ];
+  // 👇 Dynamic Nav Items: Artisan ke liye alag, User ke liye alag
+  // Sidebar.jsx mein navItems ko isse replace kar do:
+const navItems = [
+  { 
+    name: isArtisan ? 'Workspace' : 'Dashboard', 
+    path: isArtisan ? '/artisan-dashboard' : '/dashboard', 
+    icon: LayoutDashboard 
+  },
+  { 
+    // 👇 Yahan check lagaya hai
+    name: isArtisan ? 'Accepted Orders' : 'My Swaps', 
+    path: '/swaps', 
+    icon: Package 
+  },
+  { name: 'Chats', path: '/chats', icon: MessageSquare },
+];
 
   const NavLink = ({ item }) => {
     const isActive = location.pathname === item.path;
@@ -41,6 +46,14 @@ const Sidebar = () => {
     );
   };
 
+  const discoverItems = [
+    { name: 'Explore', path: '/explore', icon: Users },
+  ];
+  
+  const accountItems = [
+    { name: 'Profile', path: '/profile', icon: UserCircle },
+  ];
+
   return (
     <div className="w-[220px] bg-white border-r border-gray-200 min-h-[calc(100vh-56px)] flex flex-col">
       {/* User Profile Snippet */}
@@ -50,7 +63,8 @@ const Sidebar = () => {
         </div>
         <div>
           <div className="text-[16px] font-semibold text-gray-900">{userName}</div>
-          <div className="text-[14px] text-gray-500">Eco member</div>
+          {/* 👇 Text dynamic ho gaya */}
+          <div className="text-[14px] text-gray-500 capitalize">{isArtisan ? 'Artisan' : 'Eco member'}</div>
         </div>
       </div>
 
@@ -59,8 +73,12 @@ const Sidebar = () => {
         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2">Main</div>
         {navItems.map(item => <NavLink key={item.name} item={item} />)}
         
-        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2 mt-2">Discover</div>
-        {discoverItems.map(item => <NavLink key={item.name} item={item} />)}
+        {!isArtisan && (
+          <>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2 mt-2">Discover</div>
+            {discoverItems.map(item => <NavLink key={item.name} item={item} />)}
+          </>
+        )}
         
         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2 mt-2">Account</div>
         {accountItems.map(item => <NavLink key={item.name} item={item} />)}

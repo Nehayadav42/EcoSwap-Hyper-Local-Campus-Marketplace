@@ -2,12 +2,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Leaf } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isDashboard = ['/dashboard', '/swaps', '/chats', '/profile', '/artisan'].includes(location.pathname);
+  
+  // 👇 '/artisan-dashboard' array mein add kiya hai
+  const isDashboard = ['/dashboard', '/swaps', '/chats', '/profile', '/artisan', '/artisan-dashboard'].includes(location.pathname);
   const isAuth = ['/login', '/register'].includes(location.pathname);
+
+  // 👇 User ka role nikal rahe hain
+  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
+  const isArtisan = userInfo?.role === 'artisan';
 
   // Logout Function
   const handleLogout = () => {
@@ -36,13 +41,14 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Dynamic Right Side Info/Buttons wale section mein Logout button update karo */}
+      {/* Dynamic Right Side Info/Buttons */}
       {isDashboard ? (
         <div className="flex items-center gap-4">
-          {/* User ka naam local storage se nikal sakte ho, abhi static rakhte hain */}
-          <span className="text-[13px] text-gray-600 font-medium">Eco Member</span>
+          {/* 👇 Dynamic role text */}
+          <span className="text-[13px] text-gray-600 font-medium capitalize">
+            {isArtisan ? 'Artisan' : 'Eco Member'}
+          </span>
           
-          {/* YE BUTTON UPDATE KARO */}
           <button 
             onClick={handleLogout} 
             className="bg-white text-eco border border-eco-border px-4 py-1.5 rounded-md text-xs font-semibold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
