@@ -1,6 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const axios = require('axios');
-const Swap = require('../models/Swap');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -19,26 +18,26 @@ const analyzeWasteImage = async (req, res) => {
     const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     const mimeType = imageResponse.headers['content-type'];
     const base64Image = Buffer.from(imageResponse.data, 'binary').toString('base64');
-    console.log("2. Image fetched successfully. Sending to Gemini...");
 
-    // Yahan hum gemini-2.5-flash use kar rahe hain aur usko strict JSON ke liye force kar rahe hain
+    console.log("2. Sending to Gemini...");
+
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
-      generationConfig: { responseMimeType: "application/json" } // 👈 THE MAGIC FIX
+      generationConfig: { responseMimeType: "application/json" }
     });
 
     const prompt = `
       Analyze this waste/discarded material image.
-      1. Identify the primary material (e.g., Denim, Broken Glass, Plastic Bottle, Scrap Wood).
-      2. Suggest EXACTLY 5 creative upcycling product ideas that an artisan could make from this specific material.
-      
-      Respond ONLY with this JSON structure:
+      1. Identify the primary material.
+      2. Suggest EXACTLY 5 creative upcycling product ideas.
+
+      Respond ONLY in JSON:
       {
-        "detectedMaterial": "Specific material name",
+        "detectedMaterial": "Material name",
         "suggestedProducts": [
           {
-            "title": "Product Idea 1",
-            "description": "Short description of how it will be made",
+            "title": "Idea",
+            "description": "How to make it",
             "estimatedEcoScore": 1.5
           }
         ]
@@ -49,55 +48,61 @@ const analyzeWasteImage = async (req, res) => {
 
     const result = await model.generateContent([prompt, ...imageParts]);
     const responseText = result.response.text();
-    
-    console.log("3. AI Raw Response received successfully.");
-    
-    // Kyunki responseMimeType laga hai, humein regex (replace) ki zaroorat nahi hai
-    aiData = JSON.parse(responseText); 
-    console.log(`✅ AI Analysis Pass: Detected [${aiData.detectedMaterial}]`);
+
+    aiData = JSON.parse(responseText);
+
+    console.log(`✅ AI Success: ${aiData.detectedMaterial}`);
 
   } catch (error) {
-    console.error("❌ AI Error Details:", error.message);
-    if (error.response) console.error("API Response Error:", error.response.data);
-    
-    console.log("⚠️ Using Fallback Data because AI failed...");
+    console.error("❌ AI Error:", error.message);
+
+    // 🔥 FALLBACK DATA
     aiData = {
       detectedMaterial: "Mixed Recyclables",
       suggestedProducts: [
-        { title: "Custom Upcycled Craft", description: "Artisan will suggest an idea.", estimatedEcoScore: 1.0 },
-        { title: "Eco Storage Box", description: "A simple storage solution.", estimatedEcoScore: 2.0 },
-        { title: "Decorative Planter", description: "Turn it into a beautiful pot.", estimatedEcoScore: 1.5 },
-        { title: "Utility Tote", description: "Everyday carry bag.", estimatedEcoScore: 2.5 },
-        { title: "Desk Organizer", description: "Keep your workspace clean.", estimatedEcoScore: 1.0 }
+        { title: "Eco Planter", description: "Use as plant pot", estimatedEcoScore: 1.5 },
+        { title: "Storage Box", description: "Useful storage", estimatedEcoScore: 2.0 },
+        { title: "Desk Organizer", description: "Organize desk", estimatedEcoScore: 1.2 },
+        { title: "Decor Item", description: "Home decoration", estimatedEcoScore: 1.0 },
+        { title: "DIY Craft", description: "Creative reuse", estimatedEcoScore: 1.8 }
       ]
     };
   }
 
-  // --- THE FREE IMAGE HACK ---
-  const productsWithImages = aiData.suggestedProducts.map(product => {
-    const imagePrompt = `High-quality aesthetic photo of a ${product.title} made from upcycled ${aiData.detectedMaterial}, minimalist background`;
-    const encodedPrompt = encodeURIComponent(imagePrompt);
-    return {
-      ...product,
-      generatedImage: `https://image.pollinations.ai/prompt/${encodedPrompt}?width=500&height=500&nologo=true`
-    };
-  });
+  // 🔥 FREE IMAGE GENERATION
+ // aiController.js ke andar "--- THE FREE IMAGE HACK ---" wale hisse ko isse replace karo:
 
-  try {
-    const newSwap = await Swap.create({
-      user: userId,
+const productsWithImages = aiData.suggestedProducts.map(product => {
+  // 1. Special characters ko hata kar ekdum clean text banayenge
+  const cleanTitle = product.title.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+  const cleanMaterial = aiData.detectedMaterial.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+  
+  // 2. Ekdum crisp prompt jo image AI ko samajh aaye
+  const imagePrompt = `professional product photography of ${cleanTitle} made from recycled ${cleanMaterial}, studio lighting, minimalist background`;
+  
+  // 3. Encode properly
+  const encodedPrompt = encodeURIComponent(imagePrompt);
+  
+  // 4. Random seed add karenge taaki cache ka issue na aaye
+  const randomSeed = Math.floor(Math.random() * 10000);
+
+  return {
+    ...product,
+    generatedImage: `https://image.pollinations.ai/prompt/${encodedPrompt}?width=500&height=500&nologo=true&seed=${randomSeed}`
+  };
+});
+
+console.log("4. AI processing complete. Sending back to client for selection...");
+
+
+  res.status(200).json({
+    message: 'Success',
+    aiData: {
       wasteImage: imageUrl,
       detectedMaterial: aiData.detectedMaterial,
-      suggestedProducts: productsWithImages,
-      status: 'pending_artisan'
-    });
-
-    console.log("4. Database save successful!");
-    res.status(201).json({ message: 'Success', swapData: newSwap });
-  } catch (dbError) {
-    console.error("❌ DB Save Error:", dbError.message);
-    res.status(500).json({ message: 'Failed to save to database' });
-  }
+      suggestedProducts: productsWithImages
+    }
+  });
 };
 
 module.exports = { analyzeWasteImage };

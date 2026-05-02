@@ -172,4 +172,18 @@ const googleAuth = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, googleAuth, verifyOTP };
+const getAllArtisans = async (req, res) => {
+  try {
+    // Sirf 'artisan' role wale users dhoondho, aur unka password/otp exclude kar do
+    const artisans = await User.find({ role: 'artisan' })
+      .select('-password -otp -otpExpires')
+      .sort({ createdAt: -1 }); // Naye artisans pehle dikhenge
+      
+    res.status(200).json(artisans);
+  } catch (error) {
+    console.error("❌ Error fetching artisans:", error);
+    res.status(500).json({ message: "Failed to fetch artisans" });
+  }
+};
+
+module.exports = { registerUser, loginUser, googleAuth, verifyOTP, getAllArtisans};

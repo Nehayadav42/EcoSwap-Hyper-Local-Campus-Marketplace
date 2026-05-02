@@ -19,37 +19,61 @@ import Chats from './pages/Chats';
 import Profile from './pages/Profile';
 import Artisan from './pages/Artisan';
 import ArtisanDashboard from './pages/ArtisanDashboard';
+import FindArtisans from './pages/FindArtisans';
 
 function App() {
   return (
     <Router>
-      <Routes>
-        {/* Public Route - Landing Page (Sab dekh sakte hain) */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Landing />} />
-        </Route>
+  <Routes>
 
-        {/* Auth Routes - Sirf bina login wale dekh sakte hain */}
-        <Route element={<PublicRoute />}>
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </Route>
-        </Route>
+    {/* 🌍 PUBLIC */}
+    <Route element={<MainLayout />}>
+      <Route path="/" element={<Landing />} />
+    </Route>
 
-        {/* Protected Routes - Sirf logged-in users dekh sakte hain */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/swaps" element={<MySwaps />} />
-            <Route path="/chats" element={<Chats />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/artisan" element={<Artisan />} />
-            <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
-          </Route>
-        </Route>
-      </Routes>
-    </Router>
+    {/* 🔓 AUTH (only non-logged users) */}
+    <Route element={<PublicRoute />}>
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+    </Route>
+
+    {/* 🔒 PROTECTED (logged-in only) */}
+    <Route element={<ProtectedRoute />}>
+      <Route element={<DashboardLayout />}>
+
+        {/* 👤 USER ONLY */}
+        <Route element={<ProtectedRoute allowedRole="user" />}>
+  <Route path="/dashboard" element={<Dashboard />} />
+</Route>
+
+<Route element={<ProtectedRoute allowedRole="artisan" />}>
+  <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
+</Route>
+
+        {/* 🔨 ARTISAN ONLY */}
+        <Route 
+          path="/artisan-dashboard" 
+          element={
+            <ProtectedRoute allowedRole="artisan">
+              <ArtisanDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ✅ COMMON ROUTES */}
+        <Route path="/swaps" element={<MySwaps />} />
+        <Route path="/chats" element={<Chats />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/artisan" element={<Artisan />} />
+        <Route path="/explore" element={<FindArtisans />} />
+
+      </Route>
+    </Route>
+
+  </Routes>
+</Router>
   );
 }
 

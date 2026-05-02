@@ -130,15 +130,29 @@ const completeSwapOrder = async (req, res) => {
   }
 };
 
-// module.exports ko update karna mat bhoolna:
-module.exports = { 
-  getFeaturedSwaps, 
-  getPendingSwaps, 
-  acceptSwapOrder, 
-  getMyActiveSwaps, 
-  getSwapHistory,
-  completeSwapOrder // 👈 Yeh Naya Add Kiya
+// @route   POST /api/swaps
+// @desc    Create a new swap order after user selection
+const createSwap = async (req, res) => {
+  try {
+    const { userId, wasteImage, detectedMaterial, selectedProduct } = req.body;
+    
+    const newSwap = await Swap.create({
+      user: userId,
+      wasteImage,
+      detectedMaterial,
+      suggestedProducts: [selectedProduct], // Sirf selected wala array mein dalenge
+      status: 'pending_artisan'
+    });
+    
+    res.status(201).json(newSwap);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
+
+// module.exports mein createSwap add karna mat bhoolna!
+module.exports = { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps, getSwapHistory, completeSwapOrder, createSwap };
+
 
 
 
