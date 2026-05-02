@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { UploadCloud, Leaf, Zap, ChevronRight, Award, Loader2, Sparkles } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { UploadCloud, Leaf, Zap, ChevronRight, Award, Loader2, Sparkles, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -10,14 +10,32 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   
-  // States for Uploading and AI Analyzing
+  // States
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState(null);
+  const [activeOrders, setActiveOrders] = useState([]); // NEW STATE
 
-  // Local storage se user data nikalna
-  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || { name: 'Eco Warrior' };
+  // Local storage se user info
+  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || { name: 'Eco Warrior', _id: '69f0399aecdb320e99e25f99' };
 
+  // Component load hone par active orders fetch karo
+  const fetchActiveOrders = async () => {
+    try {
+      const { data } = await axios.get(`http://localhost:5000/api/swaps/my-active?userId=${userInfo._id}`);
+      setActiveOrders(data);
+    } catch (error) {
+      console.error("Failed to fetch active orders", error);
+    }
+  };
+
+  useEffect(() => {
+    if (userInfo._id) {
+      fetchActiveOrders();
+    }
+  }, [userInfo._id]);
+
+  // File Upload & AI Handler
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -29,39 +47,34 @@ const Dashboard = () => {
     setAiResult(null); 
     
     try {
-      // Step 1: Upload Image to Cloudinary
       const uploadRes = await api.post('/api/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
       const imageUrl = uploadRes.data.imageUrl;
       setIsUploading(false); 
-      console.log("Cloudinary URL:", imageUrl);
-      console.log("User ID:", userInfo._id);
 
-      // Safety check
       if (!imageUrl) {
          toast.error("Failed to get image URL from Cloudinary");
          setIsAnalyzing(false);
          return;
       }
       
-      // Step 2: Send Image URL to Gemini AI
       setIsAnalyzing(true);
       toast.success('Image uploaded! AI is analyzing now...');
 
-      // 👉 YEH EXACT BLOCK USE KIYA HAI:
       const payloadData = {
         imageUrl: imageUrl,
-        userId: userInfo._id || "60f0399aecdb320e99e25f99" // Fallback added
+        userId: userInfo._id || "69f0399aecdb320e99e25f99" 
       };
       
-      console.log("📦 Sending this payload:", payloadData);
-
       const aiRes = await axios.post('http://localhost:5000/api/ai/analyze', payloadData);
       
       toast.success('AI found great upcycling ideas!');
       setAiResult(aiRes.data.swapData); 
+      
+      // Upload ke baad Orders list ko fresh update karo
+      fetchActiveOrders();
 
     } catch (error) {
       console.error(error);
@@ -144,7 +157,6 @@ const Dashboard = () => {
           
           <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
-          {/* DYNAMIC CONTENT: Upload Box OR AI Results */}
           {aiResult ? (
             <div className="flex flex-col h-full animate-in fade-in zoom-in duration-500">
               <div className="bg-eco-light/50 p-4 rounded-xl border border-eco-border mb-4">
@@ -215,31 +227,79 @@ const Dashboard = () => {
           )}
         </motion.div>
 
-        {/* Active Order Card */}
-        <motion.div variants={itemVariants} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-xs font-bold text-eco uppercase tracking-wider bg-eco-light px-3 py-1 rounded-full">Active Now</div>
-            <span className="text-xs text-gray-400 font-medium">Started 2 days ago</span>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900">Old Denim → Tote Bag</h3>
-          <p className="text-sm text-gray-600 mb-6">Artisan: <Link to="/artisan" className="text-eco hover:underline font-medium">Meera Craft Studio</Link></p>
-          
-          <div className="relative mb-6 mt-auto">
-            <div className="absolute top-2 left-0 w-full h-1 bg-gray-100 rounded-full -z-10"></div>
-            <div className="absolute top-2 left-0 w-[50%] h-1 bg-eco rounded-full -z-10 transition-all duration-1000"></div>
-            
-            <div className="flex justify-between">
-              <div className="flex flex-col items-center gap-2"><div className="w-5 h-5 rounded-full bg-eco border-4 border-white shadow-sm"></div><span className="text-[11px] font-bold text-gray-900">Pickup</span></div>
-              <div className="flex flex-col items-center gap-2"><div className="w-5 h-5 rounded-full bg-eco border-4 border-white shadow-sm"></div><span className="text-[11px] font-bold text-gray-900">Approved</span></div>
-              <div className="flex flex-col items-center gap-2"><div className="w-5 h-5 rounded-full bg-eco border-4 border-eco-light shadow-sm animate-pulse"></div><span className="text-[11px] font-bold text-eco">Upcycling</span></div>
-              <div className="flex flex-col items-center gap-2"><div className="w-5 h-5 rounded-full bg-gray-200 border-4 border-white shadow-sm"></div><span className="text-[11px] font-medium text-gray-400">Delivered</span></div>
-            </div>
-          </div>
+        {/* --- DYNAMIC ACTIVE ORDERS SECTION --- */}
+        <div className="space-y-4">
+          {activeOrders.length === 0 ? (
+            <motion.div variants={itemVariants} className="bg-white p-6 rounded-2xl border border-dashed border-gray-300 flex flex-col items-center justify-center h-full min-h-[250px] text-center">
+               <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                 <Clock className="w-6 h-6 text-gray-400" />
+               </div>
+               <h3 className="text-sm font-bold text-gray-700">No Active Swaps</h3>
+               <p className="text-xs text-gray-500 mt-1">Upload an image to start a new transformation.</p>
+            </motion.div>
+          ) : (
+            activeOrders.map((order) => {
+              let progressPercent = "25%"; 
+              let statusText = "Finding Artisan";
+              
+              if (order.status === 'accepted') { progressPercent = "50%"; statusText = "Artisan Assigned"; }
+              if (order.status === 'in_progress') { progressPercent = "75%"; statusText = "Upcycling"; }
+              if (order.status === 'completed') { progressPercent = "100%"; statusText = "Delivered"; }
+              
+              const productName = order.suggestedProducts?.[0]?.title || "Custom Item";
+              const material = order.detectedMaterial || "Material";
 
-          <button onClick={() => navigate('/chats')} className="block w-full text-center bg-white border-2 border-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold hover:border-eco hover:text-eco hover:bg-eco-light/50 transition-all">
-            Chat with Artisan
-          </button>
-        </motion.div>
+              return (
+                <motion.div key={order._id} variants={itemVariants} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="text-xs font-bold text-eco uppercase tracking-wider bg-eco-light px-3 py-1 rounded-full">{statusText}</div>
+                    <span className="text-xs text-gray-400 font-medium">Active Now</span>
+                  </div>
+                  
+                  <div className="flex gap-4 items-center mb-4">
+                    <img src={order.wasteImage} alt="waste" className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 line-clamp-1">{material} → {productName}</h3>
+                      <p className="text-sm text-gray-600">
+                        Artisan: {order.artisanAssigned ? (
+                          <span className="text-eco font-medium">{order.artisanAssigned.name}</span>
+                        ) : (
+                          <span className="italic text-gray-400">Waiting for artisan...</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar UI */}
+                  <div className="relative mb-6 mt-4">
+                    <div className="absolute top-2 left-0 w-full h-1 bg-gray-100 rounded-full -z-10"></div>
+                    <div className="absolute top-2 left-0 h-1 bg-eco rounded-full -z-10 transition-all duration-1000" style={{ width: progressPercent }}></div>
+                    
+                    <div className="flex justify-between">
+                      <div className="flex flex-col items-center gap-2"><div className={`w-5 h-5 rounded-full border-4 shadow-sm ${progressPercent === '25%' ? 'bg-eco border-white animate-pulse' : 'bg-eco border-white'}`}></div><span className="text-[10px] font-bold text-gray-900">Uploaded</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className={`w-5 h-5 rounded-full border-4 shadow-sm ${progressPercent === '50%' ? 'bg-eco border-eco-light animate-pulse' : (order.status === 'accepted' || order.status === 'in_progress' || order.status === 'completed') ? 'bg-eco border-white' : 'bg-gray-200 border-white'}`}></div><span className={`text-[10px] font-bold ${order.status !== 'pending_artisan' ? 'text-gray-900' : 'text-gray-400'}`}>Accepted</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className={`w-5 h-5 rounded-full border-4 shadow-sm ${progressPercent === '75%' ? 'bg-eco border-eco-light animate-pulse' : (order.status === 'in_progress' || order.status === 'completed') ? 'bg-eco border-white' : 'bg-gray-200 border-white'}`}></div><span className={`text-[10px] font-bold ${(order.status === 'in_progress' || order.status === 'completed') ? 'text-gray-900' : 'text-gray-400'}`}>Upcycling</span></div>
+                      <div className="flex flex-col items-center gap-2"><div className={`w-5 h-5 rounded-full border-4 shadow-sm ${progressPercent === '100%' ? 'bg-eco border-white' : 'bg-gray-200 border-white'}`}></div><span className={`text-[10px] font-medium ${order.status === 'completed' ? 'text-gray-900' : 'text-gray-400'}`}>Delivered</span></div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => navigate('/chats')} 
+                    disabled={!order.artisanAssigned}
+                    className={`block w-full text-center border-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                      order.artisanAssigned 
+                        ? 'bg-white border-gray-200 text-gray-700 hover:border-eco hover:text-eco hover:bg-eco-light/50' 
+                        : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {order.artisanAssigned ? 'Chat with Artisan' : 'Chat available soon'}
+                  </button>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+        {/* --- END DYNAMIC ACTIVE ORDERS --- */}
       </div>
     </motion.div>
   );

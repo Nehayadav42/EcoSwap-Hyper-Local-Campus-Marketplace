@@ -33,19 +33,24 @@ const Login = () => {
   };
 
   // Google Login Logic
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleLoginSuccess = async (googleData) => {
     try {
-      const { data } = await api.post('/api/auth/google', {
-        tokenId: credentialResponse.credential
-      });
+      const { data } = await axios.post('http://localhost:5000/api/auth/google', { token: googleData.credential });
       
       localStorage.setItem('ecoswap_token', data.token);
-      localStorage.setItem('ecoswap_user', JSON.stringify(data));
-      
-      toast.success('Successfully logged in with Google!');
-      navigate('/dashboard');
+      localStorage.setItem('ecoswap_user', JSON.stringify(data.user));
+  
+      // CHECK THE ROLE
+      if (!data.user.role || data.user.role === 'pending') {
+        // Naya Google user hai, isko role choose karne bhej do
+        navigate('/choose-role');
+      } else if (data.user.role === 'artisan') {
+        navigate('/artisan-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
-      toast.error('Google login failed. Please try again.');
+      toast.error('Google Login failed');
     }
   };
 
@@ -105,7 +110,7 @@ const Login = () => {
         {/* The Official Google Button */}
         <div className="flex justify-center">
           <GoogleLogin
-            onSuccess={handleGoogleSuccess}
+          onSuccess={handleGoogleLoginSuccess}
             onError={() => toast.error('Google Sign-In was unsuccessful')}
             useOneTap
             shape="rectangular"

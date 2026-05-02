@@ -54,4 +54,31 @@ const acceptSwapOrder = async (req, res) => {
   }
 };
 
-module.exports = { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder };
+// @route   GET /api/swaps/my-active
+// @desc    Get active orders for the logged-in user
+const getMyActiveSwaps = async (req, res) => {
+  try {
+    const { userId } = req.query; // Frontend se aayega
+    
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID required' });
+    }
+
+    // Wo swaps laao jo is user ne upload kiye hain aur jo abhi chal rahe hain
+    const activeSwaps = await Swap.find({ 
+      user: userId,
+      status: { $in: ['pending_artisan', 'accepted', 'in_progress'] } // Delivered wale nahi dikhayenge
+    })
+    .sort({ updatedAt: -1 })
+    .populate('artisanAssigned', 'name');
+
+    res.status(200).json(activeSwaps);
+  } catch (error) {
+    console.error("❌ Error fetching active swaps:", error);
+    res.status(500).json({ message: 'Failed to fetch active swaps' });
+  }
+};
+
+// Update module.exports at the bottom:
+module.exports = { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps };
+

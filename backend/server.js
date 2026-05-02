@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const swapRoutes = require('./routes/swapRoutes');
 const aiRoutes = require('./routes/airoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 
 dotenv.config();
@@ -25,6 +26,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/swaps', swapRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/swaps', swapRoutes);
+app.use('/api/chats', chatRoutes);
 
 app.get('/', (req, res) => {
   res.send('EcoSwap API is running! 🌍');
