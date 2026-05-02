@@ -29,28 +29,25 @@ const getPendingSwaps = async (req, res) => {
 };
 
 // 3. ARTISAN ROUTE: Order accept karne ke liye
+// @route   PUT /api/swaps/:id/accept
 const acceptSwapOrder = async (req, res) => {
   try {
-    const { id } = req.params; // URL se Swap ka ID milega
-    const { artisanId } = req.body; // Frontend se Artisan ka ID aayega
+    const { artisanId, timeline } = req.body; // 👈 Timeline receive karenge (e.g., "1 week")
+    const { id } = req.params;
 
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       { 
-        status: 'accepted', 
-        artisanAssigned: artisanId 
+        artisanAssigned: artisanId, 
+        status: 'accepted',
+        estimatedTimeline: timeline // 👈 Isko save karenge
       },
-      { new: true } // Updated data return karega
+      { new: true }
     );
 
-    if (!updatedSwap) {
-      return res.status(404).json({ message: 'Swap order not found' });
-    }
-
-    res.status(200).json({ message: 'Order accepted successfully!', swap: updatedSwap });
+    res.status(200).json(updatedSwap);
   } catch (error) {
-    console.error("❌ Error accepting swap:", error);
-    res.status(500).json({ message: 'Failed to accept order' });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -150,8 +147,32 @@ const createSwap = async (req, res) => {
   }
 };
 
-// module.exports mein createSwap add karna mat bhoolna!
-module.exports = { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps, getSwapHistory, completeSwapOrder, createSwap };
+// @route   POST /api/swaps/:id/feedback
+// @desc    Submit feedback for a completed swap
+const submitFeedback = async (req, res) => {
+  try {
+    const { rating, review } = req.body;
+    const { id } = req.params;
+
+    const updatedSwap = await Swap.findByIdAndUpdate(
+      id,
+      { feedback: { rating, review } },
+      { new: true }
+    );
+
+    res.status(200).json({ message: 'Feedback submitted successfully', swap: updatedSwap });
+  } catch (error) {
+    console.error("❌ Error submitting feedback:", error);
+    res.status(500).json({ message: 'Failed to submit feedback' });
+  }
+};
+
+// module.exports mein isko add karna mat bhoolna:
+module.exports = { 
+  getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps, 
+  getSwapHistory, completeSwapOrder, createSwap, submitFeedback // 👈 Add this
+};
+
 
 
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import { MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 
@@ -8,6 +9,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Manual Login Logic
@@ -17,14 +19,18 @@ const Login = () => {
     try {
       const { data } = await api.post('/api/auth/login', {
         email,
-        password
+        password,
+        location: location.trim() || undefined,
       });
-      // Token ko localStorage mein save karo
       localStorage.setItem('ecoswap_token', data.token);
       localStorage.setItem('ecoswap_user', JSON.stringify(data));
-      
+
       toast.success(`Welcome back, ${data.name}!`);
-      navigate('/dashboard');
+      if (data.role === 'artisan') {
+        navigate('/artisan-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {
@@ -33,23 +39,24 @@ const Login = () => {
   };
 
   // Google Login Logic
-  const handleGoogleLoginSuccess = async (googleData) => {
+  const handleGoogleLoginSuccess = async (credentialResponse) => {
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/google', { token: googleData.credential });
-      
+      const { data } = await api.post('/api/auth/google', {
+        tokenId: credentialResponse.credential,
+        location: location.trim() || undefined,
+      });
+
       localStorage.setItem('ecoswap_token', data.token);
-      localStorage.setItem('ecoswap_user', JSON.stringify(data.user));
-  
-      // CHECK THE ROLE
-      if (!data.user.role || data.user.role === 'pending') {
-        // Naya Google user hai, isko role choose karne bhej do
+      localStorage.setItem('ecoswap_user', JSON.stringify(data));
+
+      if (!data.role || data.role === 'pending') {
         navigate('/choose-role');
-      } else if (data.user.role === 'artisan') {
+      } else if (data.role === 'artisan') {
         navigate('/artisan-dashboard');
       } else {
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch {
       toast.error('Google Login failed');
     }
   };
@@ -91,7 +98,21 @@ const Login = () => {
               className="w-full h-12 border border-gray-300 rounded-lg px-4 text-base focus:border-eco focus:ring-1 focus:ring-eco outline-none transition-colors"
             />
           </div>
-          
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-eco" aria-hidden />
+              City &amp; state
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Indore, Madhya Pradesh"
+              className="w-full h-12 border border-gray-300 rounded-lg px-4 text-base focus:border-eco focus:ring-1 focus:ring-eco outline-none transition-colors"
+            />
+            <p className="text-xs text-gray-500 mt-1">Optional. Saves or updates the location on your profile.</p>
+          </div>
+
           <button 
             type="submit"
             disabled={loading}

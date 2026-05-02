@@ -7,7 +7,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Register a new user (Manual)
 const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, location } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -25,6 +25,7 @@ const registerUser = async (req, res) => {
       password,
       authProvider: 'local',
       role: role || 'user',
+      location: typeof location === 'string' ? location.trim() : '',
       otp,
       otpExpires
     });
@@ -97,7 +98,8 @@ const verifyOTP = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        location: user.location || '',
       },
       token: generateToken(user._id) 
     });
@@ -108,7 +110,7 @@ const verifyOTP = async (req, res) => {
 
 // @desc    Auth user & get token (Manual Login)
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, location } = req.body;
 
   try {
     const user = await User.findOne({ email });
@@ -117,12 +119,17 @@ const loginUser = async (req, res) => {
       // if (!user.isVerified) {
       //   return res.status(401).json({ message: 'Please verify your email first.' });
       // } 
+      if (typeof location === 'string' && location.trim()) {
+        user.location = location.trim();
+        await user.save();
+      }
 
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        location: user.location || '',
         token: generateToken(user._id),
       });
     } else {
@@ -135,7 +142,7 @@ const loginUser = async (req, res) => {
 
 // @desc    Google Login / Signup
 const googleAuth = async (req, res) => {
-  const { tokenId, role } = req.body; // Frontend se aab ROLE bhi aayega
+  const { tokenId, role, location } = req.body;
 
   try {
     const ticket = await client.verifyIdToken({
@@ -146,6 +153,7 @@ const googleAuth = async (req, res) => {
     const { email, name, sub: googleId } = ticket.getPayload();
 
     let user = await User.findOne({ email });
+    const loc = typeof location === 'string' ? location.trim() : '';
 
     if (!user) {
       user = await User.create({
@@ -154,8 +162,12 @@ const googleAuth = async (req, res) => {
         googleId,
         authProvider: 'google',
         isVerified: true,
-        role: role || 'user', // Selected role save hoga!
+        role: role || 'user',
+        location: loc,
       });
+    } else if (loc) {
+      user.location = loc;
+      await user.save();
     }
 
     res.json({
@@ -163,6 +175,7 @@ const googleAuth = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      location: user.location || '',
       token: generateToken(user._id),
     });
 

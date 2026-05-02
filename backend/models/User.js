@@ -5,8 +5,8 @@ const userSchema = new mongoose.Schema({
   // Basic Info
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  
-  
+  location: { type: String, default: '' },
+
   // Password required nahi hai kyunki Google Auth walo ka password nahi hoga
   password: { type: String }, 
   // ... (name, email, password, role ke baad yeh add karo)

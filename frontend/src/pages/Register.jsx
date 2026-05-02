@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import { MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'user' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', location: '', role: 'user' });
   const [loading, setLoading] = useState(false);
   
   // OTP States
@@ -60,7 +61,8 @@ const Register = () => {
     try {
       const { data } = await api.post('/api/auth/google', {
         tokenId: credentialResponse.credential,
-        role: formData.role // Form ka role Google ke sath bhej rahe hain!
+        role: formData.role,
+        location: formData.location?.trim() || undefined,
       });
       
       localStorage.setItem('ecoswap_token', data.token);
@@ -73,7 +75,7 @@ const Register = () => {
       } else {
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch {
       toast.error('Google sign up failed. Please try again.');
     }
   };
@@ -149,6 +151,21 @@ const Register = () => {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-base focus:border-eco focus:ring-1 focus:ring-eco outline-none"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-eco" aria-hidden />
+                  City &amp; state
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Indore, Madhya Pradesh"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-base focus:border-eco focus:ring-1 focus:ring-eco outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Shown on your profile and helps match nearby swaps.</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>

@@ -23,6 +23,19 @@ const swapSchema = new mongoose.Schema({
     enum: ['pending_artisan', 'accepted', 'upcycling', 'delivered'],
     default: 'pending_artisan'
   },
+
+  status: {
+    type: String,
+    enum: ['pending_artisan', 'accepted', 'in_progress', 'completed', 'cancelled'],
+    default: 'pending_artisan'
+  },
+  // 👇 NAYA FIELD ADD KARO
+  feedback: {
+    rating: { type: Number, min: 1, max: 5 },
+    review: { type: String },
+    createdAt: { type: Date, default: Date.now }
+  }, 
+  
   artisanAssigned: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

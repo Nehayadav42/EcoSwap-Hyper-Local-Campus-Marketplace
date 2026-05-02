@@ -9,10 +9,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   
-  // --- STATES ---
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isDragging, setIsDragging] = useState(false); // Drag & Drop State
+  const [isDragging, setIsDragging] = useState(false);
   
   const [aiResult, setAiResult] = useState(null);
   const [activeOrders, setActiveOrders] = useState([]); 
@@ -24,7 +23,6 @@ const Dashboard = () => {
 
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
 
-  // --- FETCH DATA ---
   const fetchDashboardData = async () => {
     if (!userInfo._id) return;
     try {
@@ -41,88 +39,35 @@ const Dashboard = () => {
 
   useEffect(() => { fetchDashboardData(); }, [userInfo._id]);
 
-  // --- UPLOAD & DRAG HANDLERS ---
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append('image', file);
-
     setIsUploading(true);
     setAiResult(null); 
-    setSelectedIdea(null);
-    setCustomIdea('');
-    
     try {
-      const uploadRes = await axios.post('http://localhost:5000/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
+      const uploadRes = await axios.post('http://localhost:5000/api/upload', formData);
       const imageUrl = uploadRes.data.imageUrl;
       setIsUploading(false); 
       setIsAnalyzing(true);
-      toast.success('Image uploaded! AI is analyzing...');
-
       const aiRes = await axios.post('http://localhost:5000/api/ai/analyze', { imageUrl, userId: userInfo._id });
-      
-      toast.success('AI found great ideas! Select one.');
       setAiResult(aiRes.data.aiData); 
-
     } catch (error) {
-      toast.error('Something went wrong!');
+      toast.error('Upload failed');
       setIsUploading(false);
     } finally {
       setIsAnalyzing(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFileChange({ target: { files: [file] } });
-  };
-
-  // --- CONFIRM ORDER ---
-  const handleConfirmSwap = async () => {
-    setIsUploading(true);
-    try {
-      let finalProduct = selectedIdea === 'custom' ? {
-        title: "Custom Upcycle Request",
-        description: customIdea,
-        estimatedEcoScore: 1.5,
-        generatedImage: aiResult.wasteImage 
-      } : selectedIdea;
-
-      await axios.post('http://localhost:5000/api/swaps', {
-        userId: userInfo._id,
-        wasteImage: aiResult.wasteImage,
-        detectedMaterial: aiResult.detectedMaterial,
-        selectedProduct: finalProduct
-      });
-
-      toast.success("Order sent to Artisans!");
-      setAiResult(null);
-      setSelectedIdea(null);
-      setCustomIdea('');
-      fetchDashboardData(); 
-    } catch (error) {
-      toast.error("Failed to submit request.");
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const getLevelInfo = () => {
@@ -134,202 +79,137 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
-      
-      {/* ZOOM MODAL */}
-      <AnimatePresence>
-        {zoomedImage && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm"
-            onClick={() => setZoomedImage(null)}
-          >
-            <div className="relative max-w-2xl w-full">
-              <button onClick={() => setZoomedImage(null)} className="absolute -top-12 right-0 text-white hover:text-eco transition-colors">
-                <X className="w-8 h-8" />
-              </button>
-              <img src={zoomedImage} alt="Zoomed idea" className="w-full h-auto rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+  
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back, {userInfo.name?.split(' ')[0] || 'User'}! Let's make an impact today.</p>
+          <p className="text-sm text-gray-500 mt-1">Welcome back, {userInfo.name?.split(' ')[0] || 'User'}!</p>
         </div>
       </div>
-
+  
       {/* LEVEL CARD */}
-      <div className="bg-gradient-to-r from-eco to-eco-dark rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <Leaf className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 rotate-12" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Award className="w-5 h-5 text-eco-border" />
-              <h2 className="text-lg font-bold text-eco-border">{levelInfo.title}</h2>
-            </div>
-            <p className="text-sm text-eco-light mb-4">You have saved <span className="font-bold text-white">{ecoStats.totalKg} kg</span> of waste!</p>
-            <div className="w-full bg-black/20 rounded-full h-2.5 mb-1 overflow-hidden">
-              <div className="bg-eco-border h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((ecoStats.totalKg / levelInfo.goal) * 100, 100)}%` }}></div>
-            </div>
+      <div className="bg-gradient-to-r from-eco to-eco-dark rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-bold">{levelInfo.title}</h2>
+            <p className="text-sm">You saved <b>{ecoStats.totalKg} kg</b> waste</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center min-w-[120px] border border-white/20">
-            <div className="text-3xl font-bold text-white">{ecoStats.completedCount}</div>
-            <div className="text-xs text-eco-light font-medium mt-1">Completed Swaps</div>
+          <div className="text-center">
+            <p className="text-2xl font-bold">{ecoStats.completedCount}</p>
+            <p className="text-xs font-medium">Completed</p>
           </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* LEFT COLUMN: UPLOAD / SELECTION */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[500px]">
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-
+  
+      <div className="grid md:grid-cols-2 gap-6">
+  
+        {/* LEFT: UPLOAD BOX */}
+        <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col h-[500px]">
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} hidden />
           {aiResult ? (
-            <div className="flex flex-col h-full animate-in fade-in zoom-in duration-300">
-              <div className="flex justify-between items-center bg-eco-light/50 p-3 rounded-xl border border-eco-border mb-3">
-                <h3 className="text-sm font-bold text-gray-900">
-                  Detected: <span className="text-eco">{aiResult.detectedMaterial}</span>
-                </h3>
-                <button onClick={() => setAiResult(null)} className="text-xs text-gray-500 hover:text-red-500 font-medium">Cancel</button>
-              </div>
-
-              <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Select an idea or write your own</p>
-
-              <div className="space-y-3 overflow-y-auto pr-2 flex-1 pb-4 custom-scrollbar">
-                {aiResult.suggestedProducts?.slice(0, 3).map((product, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => { setSelectedIdea(product); setCustomIdea(''); }}
-                    className={`p-3 rounded-xl cursor-pointer flex gap-3 items-center transition-all border-2 ${selectedIdea?.title === product.title ? 'border-eco bg-eco-light/20 shadow-md' : 'border-gray-100 bg-white hover:border-eco-light'}`}
-                  >
-                    <div className="relative group shrink-0 bg-gray-100 rounded-xl">
-                      <img 
-                        src={product.generatedImage} 
-                        onError={(e) => {
-                          e.target.onError = null; 
-                          const shortName = encodeURIComponent(product.title.split(' ').slice(0, 3).join(' '));
-                          e.target.src = `https://placehold.co/400x400/dcfce7/166534?font=Montserrat&text=${shortName}`;
-                        }}
-                        onClick={(e) => { e.stopPropagation(); setZoomedImage(product.generatedImage); }}
-                        className="w-16 h-16 rounded-xl object-cover border border-gray-200 group-hover:opacity-80 transition-opacity"
-                        alt={product.title}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-                        <span className="bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">Zoom</span>
-                      </div>
-                    </div>
-
-                    <div className="flex-1">
-                      <h4 className="text-sm font-bold text-gray-900">{product.title}</h4>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{product.description}</p>
-                    </div>
-                    {selectedIdea?.title === product.title && <CheckCircle className="w-5 h-5 text-eco shrink-0" />}
-                  </div>
-                ))}
-
-                <div 
-                  onClick={() => setSelectedIdea('custom')}
-                  className={`p-4 rounded-xl cursor-pointer transition-all border-2 ${selectedIdea === 'custom' ? 'border-eco bg-eco-light/20' : 'border-gray-100 bg-white hover:border-eco-light'}`}
-                >
-                  <h4 className="text-sm font-bold text-gray-900 mb-1 flex justify-between items-center">
-                    I have a specific idea 
-                    {selectedIdea === 'custom' && <CheckCircle className="w-5 h-5 text-eco" />}
-                  </h4>
-                  {selectedIdea === 'custom' ? (
-                    <textarea 
-                      autoFocus
-                      value={customIdea}
-                      onChange={(e) => setCustomIdea(e.target.value)}
-                      placeholder="E.g., Turn this into a desk organizer..."
-                      className="w-full mt-2 text-sm p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-eco bg-white"
-                      rows="2"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <p className="text-xs text-gray-500 mt-1">Click here to write your own instructions.</p>
-                  )}
-                </div>
-              </div>
-
-              <button 
-                onClick={handleConfirmSwap} 
-                disabled={!selectedIdea || (selectedIdea === 'custom' && !customIdea.trim()) || isUploading}
-                className="w-full bg-eco text-white py-3.5 rounded-xl text-sm font-bold mt-2 hover:bg-eco-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              >
-                {isUploading ? 'Sending to Artisans...' : 'Confirm & Request Upcycle'}
-              </button>
+            <div className="text-center animate-in fade-in zoom-in duration-300">
+              <h3 className="font-bold text-lg text-eco">{aiResult.detectedMaterial}</h3>
+              <p className="text-sm mt-2">AI Suggestions Ready</p>
             </div>
           ) : (
-            // DRAG AND DROP ZONE
-            <div 
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => !isUploading && !isAnalyzing && fileInputRef.current.click()} 
-              className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-all duration-300 ease-in-out ${
-                isUploading || isAnalyzing 
-                  ? 'border-gray-200 bg-gray-50' 
-                  : isDragging 
-                    ? 'border-eco bg-eco-light/40 scale-[1.02] shadow-inner' 
-                    : 'border-gray-300 hover:border-eco bg-gray-50 hover:bg-eco-light/30 cursor-pointer'
+            <div
+              onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+              onClick={() => fileInputRef.current.click()}
+              className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all ${
+                isDragging ? 'border-eco bg-eco-light/20 scale-[1.02]' : 'border-gray-300 hover:border-eco'
               }`}
             >
               {isAnalyzing ? (
-                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center gap-4 text-center">
-                  <div className="bg-white p-4 rounded-full shadow-sm relative">
-                    <Sparkles className="w-8 h-8 text-amber-500 animate-pulse relative z-10" />
-                  </div>
-                  <p className="text-base font-bold text-gray-900">AI is analyzing material...</p>
-                </motion.div>
-              ) : isUploading ? (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="bg-white p-4 rounded-full shadow-sm"><Loader2 className="w-8 h-8 text-eco animate-spin" /></div>
-                  <p className="text-base font-bold text-gray-900">Uploading image...</p>
+                <div className="text-center">
+                  <Sparkles className="w-8 h-8 text-amber-500 animate-pulse mx-auto" />
+                  <p className="font-bold mt-2">Analyzing...</p>
                 </div>
+              ) : isUploading ? (
+                <Loader2 className="w-8 h-8 animate-spin text-eco" />
               ) : (
-                <motion.div whileHover={{ y: -5 }} className="flex flex-col items-center text-center">
-                  <div className={`p-4 rounded-full shadow-sm transition-all duration-300 ${isDragging ? 'bg-eco text-white scale-110' : 'bg-white text-eco'}`}>
-                    <UploadCloud className="w-8 h-8" />
-                  </div>
-                  <p className={`text-base font-bold mt-4 transition-colors ${isDragging ? 'text-eco' : 'text-gray-900'}`}>
-                    {isDragging ? 'Drop image right here!' : 'Click or Drag & Drop waste photo'}
-                  </p>
-                </motion.div>
+                <>
+                  <UploadCloud className="w-8 h-8 text-eco" />
+                  <p className="font-bold mt-2">{isDragging ? 'Drop here!' : 'Click or Drag Image'}</p>
+                </>
               )}
             </div>
           )}
         </div>
+  
+        {/* RIGHT: ACTIVE ORDERS WITH PROGRESS BAR */}
+        <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col h-[500px]">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-eco" /> Active Orders
+          </h2>
 
-        {/* RIGHT COLUMN: ACTIVE ORDERS */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[500px]">
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Clock className="w-5 h-5 text-eco"/> Active Orders</h2>
-          <div className="space-y-3 overflow-y-auto pr-2 flex-1 custom-scrollbar">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">
             {activeOrders.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-gray-400">
-                <Clock className="w-8 h-8 mb-3 opacity-20" />
-                <p className="text-sm">No active orders right now.</p>
-              </div>
+              <p className="text-gray-400 text-sm text-center mt-10">No active orders</p>
             ) : (
               activeOrders.map((order) => {
                 const productName = order.suggestedProducts?.[0]?.title || "Custom Item";
+                
+                // --- PROGRESS BAR LOGIC ---
+                const stages = ['pending_artisan', 'accepted', 'in_progress', 'completed'];
+                const currentStageIndex = stages.indexOf(order.status);
+
                 return (
-                  <div key={order._id} className="border border-gray-100 p-4 rounded-xl flex flex-col hover:border-eco-light transition-colors">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="text-[10px] font-bold text-eco uppercase tracking-wider bg-eco-light px-2 py-1 rounded-md">
-                        {order.status === 'accepted' ? 'Artisan Assigned' : order.status === 'in_progress' ? 'Upcycling' : 'Finding Artisan'}
-                      </span>
-                    </div>
-                    <div className="flex gap-3 items-center">
-                      <img src={order.wasteImage} alt="waste" className="w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0" />
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-900 line-clamp-1">{productName}</h3>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Artisan: {order.artisanAssigned ? <span className="text-eco font-medium">{order.artisanAssigned.name}</span> : 'Waiting...'}
+                  <div key={order._id} className="border border-gray-100 p-4 rounded-2xl flex flex-col hover:border-eco-light transition-all shadow-sm">
+                    
+                    <div className="flex gap-3 items-center mb-4">
+                      <img src={order.wasteImage} className="w-12 h-12 rounded-lg object-cover border shrink-0" alt="waste" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-gray-900 truncate">{productName}</h3>
+                        <p className="text-[11px] text-gray-500">
+                          {order.artisanAssigned ? `Artisan: ${order.artisanAssigned.name}` : 'Finding Artisan...'}
                         </p>
                       </div>
+                    </div>
+
+                    {/* 🔥 DYNAMIC PROGRESS BAR 🔥 */}
+                    <div className="relative mb-5 px-1 mt-1">
+                      {/* Background Line */}
+                      <div className="absolute top-1.5 left-0 w-full h-1 bg-gray-100 rounded-full"></div>
+                      {/* Active Line */}
+                      <div 
+                        className="absolute top-1.5 left-0 h-1 bg-eco rounded-full transition-all duration-700"
+                        style={{ width: `${(currentStageIndex / (stages.length - 1)) * 100}%` }}
+                      ></div>
+                      {/* Dots & Text */}
+                      <div className="relative flex justify-between">
+                        {stages.map((stage, idx) => (
+                          <div key={stage} className="flex flex-col items-center">
+                            <div className={`w-3 h-3 rounded-full border-2 transition-all duration-500 z-10 ${
+                              idx <= currentStageIndex ? 'bg-eco border-eco scale-110 shadow-sm' : 'bg-white border-gray-200'
+                            }`}></div>
+                            <span className={`text-[8px] font-black mt-2 uppercase tracking-tighter ${
+                              idx <= currentStageIndex ? 'text-eco' : 'text-gray-300'
+                            }`}>
+                              {stage.split('_')[0]}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Timeline & Chat Button */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                      {order.estimatedTimeline ? (
+                        <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] font-bold">Ready in {order.estimatedTimeline}</span>
+                        </div>
+                      ) : <div className="text-[10px] text-gray-400 italic">Processing...</div>}
+                      
+                      <button 
+                        onClick={() => navigate('/chats')}
+                        className={`text-[10px] font-black px-3 py-1 rounded-lg transition-all ${
+                          order.artisanAssigned ? 'bg-eco-light text-eco hover:bg-eco hover:text-white' : 'hidden'
+                        }`}
+                      >
+                        CHAT
+                      </button>
                     </div>
                   </div>
                 );
@@ -337,7 +217,6 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
