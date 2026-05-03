@@ -199,4 +199,6 @@ const getAllArtisans = async (req, res) => {
   }
 };
 
+
+
 module.exports = { registerUser, loginUser, googleAuth, verifyOTP, getAllArtisans};

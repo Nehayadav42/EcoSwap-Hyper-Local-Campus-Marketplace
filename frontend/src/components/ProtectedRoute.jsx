@@ -1,24 +1,25 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ allowedRole }) => {
-  const token = localStorage.getItem('ecoswap_token');
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user'));
+  const location = useLocation();
 
-  // Not logged in
-  if (!token || !userInfo) {
-    return <Navigate to="/login" replace />;
+  if (!userInfo || !userInfo._id) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Role restriction
   if (allowedRole && userInfo.role !== allowedRole) {
-    if (userInfo.role === 'artisan') {
-      return <Navigate to="/artisan-dashboard" replace />;
+    // Yahan redirect karne se pehle check karo ki kya hum already sahi raste par toh nahi?
+    const dest = userInfo.role === 'artisan' ? '/artisan-dashboard' : '/dashboard';
+    
+    // Agar hum already mismatch wali state mein hain, toh loop break karne ke liye redirect karo
+    // Lekin ensure karo ki hum usi path par wapas na bhej dein
+    if (location.pathname !== dest) {
+      return <Navigate to={dest} replace />;
     }
-    return <Navigate to="/dashboard" replace />;
   }
 
-  // ✅ IMPORTANT: render nested routes
   return <Outlet />;
 };
 
-export default ProtectedRoute;
+export default ProtectedRoute;  

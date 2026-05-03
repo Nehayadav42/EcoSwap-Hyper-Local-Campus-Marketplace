@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Route Guards
 import ProtectedRoute from './components/ProtectedRoute';
@@ -19,61 +19,54 @@ import Chats from './pages/Chats';
 import Profile from './pages/Profile';
 import Artisan from './pages/Artisan';
 import ArtisanDashboard from './pages/ArtisanDashboard';
-import FindArtisans from './pages/FindArtisans';
+import Explore from './pages/Explore';
 
 function App() {
   return (
     <Router>
-  <Routes>
+      <Routes>
+        
+        {/* 1. PUBLIC ROUTES: Landing page (Using MainLayout with Landing Nav) */}
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Landing />} />
+        </Route>
 
-    {/* 🌍 PUBLIC */}
-    <Route element={<MainLayout />}>
-      <Route path="/" element={<Landing />} />
-    </Route>
+        {/* 2. AUTH ROUTES: Login/Register (Using AuthLayout) */}
+        <Route element={<PublicRoute />}>
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
+        </Route>
 
-    {/* 🔓 AUTH (only non-logged users) */}
-    <Route element={<PublicRoute />}>
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Route>
-    </Route>
+        {/* 3. PROTECTED & DASHBOARD ZONE: Everything inside DashboardLayout (Sidebar + Dash Nav) */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            
+            {/* COMMON PROTECTED ROUTES */}
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/swaps" element={<MySwaps />} />
+            <Route path="/chats" element={<Chats />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/artisan" element={<Artisan />} />
 
-    {/* 🔒 PROTECTED (logged-in only) */}
-    <Route element={<ProtectedRoute />}>
-      <Route element={<DashboardLayout />}>
+            {/* ROLE SPECIFIC DASHBOARDS */}
+            <Route element={<ProtectedRoute allowedRole="user" />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
 
-        {/* 👤 USER ONLY */}
-        <Route element={<ProtectedRoute allowedRole="user" />}>
-  <Route path="/dashboard" element={<Dashboard />} />
-</Route>
+            <Route element={<ProtectedRoute allowedRole="artisan" />}>
+              <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
+            </Route>
 
-<Route element={<ProtectedRoute allowedRole="artisan" />}>
-  <Route path="/artisan-dashboard" element={<ArtisanDashboard />} />
-</Route>
+          </Route>
+        </Route>
 
-        {/* 🔨 ARTISAN ONLY */}
-        <Route 
-          path="/artisan-dashboard" 
-          element={
-            <ProtectedRoute allowedRole="artisan">
-              <ArtisanDashboard />
-            </ProtectedRoute>
-          } 
-        />
+        {/* Fallback: Unknown routes go to Landing or Dashboard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
 
-        {/* ✅ COMMON ROUTES */}
-        <Route path="/swaps" element={<MySwaps />} />
-        <Route path="/chats" element={<Chats />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/artisan" element={<Artisan />} />
-        <Route path="/explore" element={<FindArtisans />} />
-
-      </Route>
-    </Route>
-
-  </Routes>
-</Router>
+      </Routes>
+    </Router>
   );
 }
 

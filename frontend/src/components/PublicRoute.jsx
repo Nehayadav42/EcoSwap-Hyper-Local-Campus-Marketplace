@@ -1,10 +1,16 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
 const PublicRoute = () => {
-  const token = localStorage.getItem('ecoswap_token');
+  // Token ki jagah user info check karo kyunki ProtectedRoute bhi wahi kar raha hai
+  const userInfo = JSON.parse(localStorage.getItem('ecoswap_user'));
 
-  // Agar token hai, toh Dashboard par bhejo, warna Login/Register page dikhao
-  return token ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  if (userInfo && userInfo._id) {
+    // Role based redirect taaki loop na bane
+    const dashboardPath = userInfo.role === 'artisan' ? '/artisan-dashboard' : '/dashboard';
+    return <Navigate to={dashboardPath} replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default PublicRoute;

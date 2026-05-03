@@ -1,11 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, MessageSquare, Users, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Package, MessageSquare, Search, UserCircle } from 'lucide-react'; // 👈 Search import kiya
 
 const Sidebar = () => {
   const location = useLocation();
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
   const userName = userInfo?.name || 'Eco Warrior';
-  const isArtisan = userInfo?.role === 'artisan'; // 👈 Role check kar rahe hain
+  const isArtisan = userInfo?.role === 'artisan'; 
 
   const userInitials = userName
     .split(' ')
@@ -14,22 +14,29 @@ const Sidebar = () => {
     .map((part) => part[0]?.toUpperCase())
     .join('') || 'EW';
 
-  // 👇 Dynamic Nav Items: Artisan ke liye alag, User ke liye alag
-  // Sidebar.jsx mein navItems ko isse replace kar do:
-const navItems = [
-  { 
-    name: isArtisan ? 'Workspace' : 'Dashboard', 
-    path: isArtisan ? '/artisan-dashboard' : '/dashboard', 
-    icon: LayoutDashboard 
-  },
-  { 
-    // 👇 Yahan check lagaya hai
-    name: isArtisan ? 'Accepted Orders' : 'My Swaps', 
-    path: '/swaps', 
-    icon: Package 
-  },
-  { name: 'Chats', path: '/chats', icon: MessageSquare },
-];
+  // Dynamic Nav Items: Artisan ke liye alag, User ke liye alag
+  const navItems = [
+    { 
+      name: isArtisan ? 'Workspace' : 'Dashboard', 
+      path: isArtisan ? '/artisan-dashboard' : '/dashboard', 
+      icon: LayoutDashboard 
+    },
+    { 
+      name: isArtisan ? 'Accepted Orders' : 'My Swaps', 
+      path: '/swaps', 
+      icon: Package 
+    },
+    { name: 'Chats', path: '/chats', icon: MessageSquare },
+  ];
+
+  // 👇 YAHAN FIX HAI: 'Artisan' hata kar 'Explore' kiya hai
+  const discoverItems = [
+    { name: 'Explore', path: '/explore', icon: Search },
+  ];
+  
+  const accountItems = [
+    { name: 'Profile', path: '/profile', icon: UserCircle },
+  ];
 
   const NavLink = ({ item }) => {
     const isActive = location.pathname === item.path;
@@ -46,14 +53,6 @@ const navItems = [
     );
   };
 
-  const discoverItems = [
-    { name: 'Explore', path: '/explore', icon: Users },
-  ];
-  
-  const accountItems = [
-    { name: 'Profile', path: '/profile', icon: UserCircle },
-  ];
-
   return (
     <div className="w-[220px] bg-white border-r border-gray-200 min-h-[calc(100vh-56px)] flex flex-col">
       {/* User Profile Snippet */}
@@ -63,7 +62,6 @@ const navItems = [
         </div>
         <div>
           <div className="text-[16px] font-semibold text-gray-900">{userName}</div>
-          {/* 👇 Text dynamic ho gaya */}
           <div className="text-[14px] text-gray-500 capitalize">{isArtisan ? 'Artisan' : 'Eco member'}</div>
         </div>
       </div>
@@ -73,12 +71,9 @@ const navItems = [
         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2">Main</div>
         {navItems.map(item => <NavLink key={item.name} item={item} />)}
         
-        {!isArtisan && (
-          <>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2 mt-2">Discover</div>
-            {discoverItems.map(item => <NavLink key={item.name} item={item} />)}
-          </>
-        )}
+        {/* 👇 Yahan se !isArtisan hataya taaki sabko dikhe */}
+        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2 mt-2">Discover</div>
+        {discoverItems.map(item => <NavLink key={item.name} item={item} />)}
         
         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4 py-2 mt-2">Account</div>
         {accountItems.map(item => <NavLink key={item.name} item={item} />)}
@@ -86,4 +81,5 @@ const navItems = [
     </div>
   );
 };
+
 export default Sidebar;
