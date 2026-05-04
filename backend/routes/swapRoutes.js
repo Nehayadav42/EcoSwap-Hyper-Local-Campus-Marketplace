@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps, getSwapHistory, completeSwapOrder, createSwap, submitFeedback} = require('../controllers/swapController');
+const { getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, updateSwapStatus, getMyActiveSwaps, getSwapHistory, completeSwapOrder, createSwap, submitFeedback} = require('../controllers/swapController');
 
 // Existing Landing Page Route
 router.get('/featured', getFeaturedSwaps);
@@ -9,6 +9,7 @@ router.get('/my-active', getMyActiveSwaps);
 router.get('/pending', getPendingSwaps);
 router.get('/history', getSwapHistory);
 router.post('/', createSwap);
+router.put('/:id/status', updateSwapStatus);
 router.put('/:id/accept', acceptSwapOrder);
 router.put('/:id/complete', completeSwapOrder);
 router.post('/:id/feedback', submitFeedback);

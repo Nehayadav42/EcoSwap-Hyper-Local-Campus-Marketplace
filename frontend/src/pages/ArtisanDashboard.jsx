@@ -8,7 +8,7 @@ import {
   UploadCloud, 
   X, 
   Loader2,
-  Plus
+  Plus, ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,9 +30,20 @@ const ArtisanDashboard = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        // Fetching pending requests for artisans to accept
         const { data } = await axios.get('http://localhost:5000/api/swaps/history');
-        setNewRequests(data.filter(req => req.status === 'pending_artisan'));
+        
+        // 1. 🔥 YAHAN CONSOLE LOG LAGA DIYA HAI CHECK KARNE KE LIYE
+        console.log("Backend se ye data aaya:", data);
+
+        // 2. 🔥 STATUS FILTER THODA LOOSE KAR DIYA HAI
+        // Kyunki shayad backend naye order ko 'pending' naam se save kar raha hai, 'pending_artisan' se nahi!
+        const availableRequests = data.filter(req => 
+          req.status === 'pending_artisan' || req.status === 'pending'
+        );
+        
+        console.log("Filter hone ke baad ye bacha:", availableRequests);
+        setNewRequests(availableRequests);
+
       } catch (error) {
         console.error("Error fetching requests", error);
       } finally {
@@ -151,43 +162,102 @@ const ArtisanDashboard = () => {
         </button>
       </div>
 
-      {/* 3. NEW REQUESTS SECTION */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-amber-500" /> New Upcycle Requests
-        </h2>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-eco" /></div>
-        ) : newRequests.length === 0 ? (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2rem] p-12 text-center">
-            <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No new requests in your area yet.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {newRequests.map((req) => (
-              <div key={req._id} className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex gap-4 mb-4">
-                  <img src={req.wasteImage} className="w-24 h-24 rounded-2xl object-cover border" alt="waste" />
-                  <div>
-                    <h3 className="font-bold text-gray-900 leading-tight mb-1">{req.selectedProduct?.title}</h3>
-                    <p className="text-xs text-gray-500 line-clamp-3">{req.selectedProduct?.description}</p>
+{/* 3. NEW REQUESTS SECTION */}
+<div>
+          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-500" /> New Upcycle Requests
+          </h2>
+          
+          {isLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-eco" /></div>
+          ) : newRequests.length === 0 ? (
+            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[2rem] p-12 text-center">
+              <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">No new requests in your area yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {newRequests.map((req) => {
+                
+                // Text Fallbacks
+                const productTitle = req.selectedProduct?.title || req.suggestedProducts?.[0]?.title || "Custom Upcycle Request";
+                const productDesc = req.selectedProduct?.description || req.suggestedProducts?.[0]?.description || "No specific description provided.";
+                
+                // Image Fallbacks (Fix for broken AI images)
+                const aiGeneratedImage = req.selectedProduct?.generatedImage || req.suggestedProducts?.[0]?.generatedImage || req.selectedProduct?.imageUrl;
+
+                return (
+                  <div key={req._id} className="bg-white border border-gray-100 rounded-[2rem] p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+                    
+                    {/* 🔥 NEW VISUAL: Before -> After */}
+                    <div className="flex items-center gap-3 mb-4 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                      
+                      {/* Left: User ne kya bheja (Uploaded Waste) */}
+                      <div className="flex-1 text-center">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-1.5 block">Uploaded Material</span>
+                        <img 
+                          src={req.wasteImage} 
+                          className="w-full h-24 object-cover rounded-xl border border-gray-200 shadow-sm bg-white" 
+                          alt="waste" 
+                        />
+                      </div>
+
+                      {/* Arrow */}
+                      <div className="shrink-0 text-gray-300">
+                        <ArrowRight className="w-5 h-5" />
+                      </div>
+
+                      {/* Right: User kya chahta hai (AI Generated / Target) */}
+                      <div className="flex-1 text-center">
+                        <span className="text-[9px] font-black text-eco uppercase tracking-wider mb-1.5 block">Wants to make</span>
+                        <img 
+                          src={aiGeneratedImage || ''} 
+                          className="w-full h-24 object-cover rounded-xl border border-eco-border shadow-sm bg-white" 
+                          alt={productTitle}
+                          // 🔥 IMAGE FIX: Agar AI image URL broken hai, toh ye automatically ek placeholder bana dega
+                          onError={(e) => {
+                            e.target.onError = null; // Infinite loop rokne ke liye
+                            const shortName = encodeURIComponent(productTitle.split(' ').slice(0, 2).join(' '));
+                            e.target.src = `https://placehold.co/400x400/dcfce7/166534?font=Montserrat&text=${shortName}`;
+                          }}
+                        />
+                      </div>
+
+                    </div>
+
+                    {/* Text Details */}
+                    <div className="flex flex-col flex-1 mb-4">
+                      <h3 className="font-bold text-gray-900 leading-tight mb-1">{productTitle}</h3>
+                      <p className="text-xs text-gray-500 line-clamp-2">{productDesc}</p>
+                      
+                      {/* Material Tag */}
+                      {req.detectedMaterial && (
+                        <div className="mt-3">
+                          <span className="inline-block bg-eco-light/50 text-eco border border-eco/20 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wide">
+                            Material: {req.detectedMaterial}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Accept Button */}
+                    <button 
+                      onClick={() => handleAcceptOrder(req._id)}
+                      className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-eco transition-all shadow-md mt-auto"
+                    >
+                      Accept Order
+                    </button>
+
                   </div>
-                </div>
-                <button 
-                  onClick={() => handleAcceptOrder(req._id)}
-                  className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-eco transition-all shadow-md"
-                >
-                  Accept Order
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
-    </div>
   );
 };
+
 
 export default ArtisanDashboard;

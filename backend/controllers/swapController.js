@@ -81,26 +81,35 @@ const getMyActiveSwaps = async (req, res) => {
 
 // @route   GET /api/swaps/history
 // @desc    Get ALL swaps (history) for User or Artisan
-const getSwapHistory = async (req, res) => {
+
+
+// Backend: controllers/swapController.js
+
+ const getSwapHistory = async (req, res) => {
   try {
-    const { userId } = req.query; 
-    
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID required' });
+    const { userId } = req.query;
+    let filter = {}; 
+
+    if (userId) {
+      // 🔥 Yahan humne backend ko bataya: 
+      // "Order lao agar user ne upload kiya ho YA FIR artisan ne accept kiya ho"
+      filter = {
+        $or: [
+          { userId: userId },             // Agar client ne upload kiya
+          { user: userId },               // Alternate field for client
+          { artisanAssigned: userId }     // 👈 YE NAYI LINE: Agar artisan ne order accept kiya
+        ]
+      };
+    } else {
+      // Artisan Dashboard ke liye pending orders
+      filter = { status: { $in: ['pending', 'pending_artisan'] } }; 
     }
 
-    // $or logic: Ya toh maine upload kiya ho (User), ya maine accept kiya ho (Artisan)
-    const history = await Swap.find({ 
-      $or: [{ user: userId }, { artisanAssigned: userId }]
-    })
-    .sort({ createdAt: -1 }) // Latest pehle
-    .populate('artisanAssigned', 'name')
-    .populate('user', 'name'); 
-
-    res.status(200).json(history);
+    const swaps = await Swap.find(filter).sort({ createdAt: -1 });
+    res.status(200).json(swaps);
   } catch (error) {
-    console.error("❌ Error fetching swap history:", error);
-    res.status(500).json({ message: 'Failed to fetch history' });
+    console.error("Error fetching history:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -167,10 +176,38 @@ const submitFeedback = async (req, res) => {
   }
 };
 
+// backend/controllers/swapController.js ke andar kahin bhi add kardo
+
+const updateSwapStatus = async (req, res) => {
+  try {
+    const { id } = req.params; // Order ki ID URL se milegi
+    const { status, artisanId } = req.body; // Frontend se 'accepted' aur artisan ki ID aayegi
+
+    // Database mein order dhoondo aur update karo
+    const updatedSwap = await Swap.findByIdAndUpdate(
+      id,
+      { 
+        status: status, 
+        artisanAssigned: artisanId // Artisan ko is order se link kar diya
+      },
+      { new: true } // Naya updated data return karega
+    );
+
+    if (!updatedSwap) {
+      return res.status(404).json({ message: "Order nahi mila!" });
+    }
+
+    res.status(200).json(updatedSwap);
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ message: "Server error status update karne mein" });
+  }
+};
+
 // module.exports mein isko add karna mat bhoolna:
 module.exports = { 
   getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps, 
-  getSwapHistory, completeSwapOrder, createSwap, submitFeedback // 👈 Add this
+  getSwapHistory, completeSwapOrder, createSwap, submitFeedback, updateSwapStatus // 👈 Add this
 };
 
 

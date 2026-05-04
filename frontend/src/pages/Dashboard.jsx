@@ -35,6 +35,7 @@ const Dashboard = () => {
     if (!userInfo._id) return;
     try {
       const { data } = await axios.get(`http://localhost:5000/api/swaps/history?userId=${userInfo._id}`);
+      console.log("Dashboard Orders API Response:", data); //
       setActiveOrders(data.filter(order => order.status !== 'completed'));
 
       const completed = data.filter(order => order.status === 'completed');
