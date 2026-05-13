@@ -1,4 +1,5 @@
 const Swap = require('../models/Swap');
+const { generateImageWithHF } = require('../utils/aiHelpers'); // 👈 AI Helper Import Kiya
 
 // 1. PUBLIC ROUTE: Landing page ke liye
 const getFeaturedSwaps = async (req, res) => {
@@ -32,7 +33,7 @@ const getPendingSwaps = async (req, res) => {
 // @route   PUT /api/swaps/:id/accept
 const acceptSwapOrder = async (req, res) => {
   try {
-    const { artisanId, timeline } = req.body; // 👈 Timeline receive karenge (e.g., "1 week")
+    const { artisanId, timeline } = req.body; // Timeline receive karenge
     const { id } = req.params;
 
     const updatedSwap = await Swap.findByIdAndUpdate(
@@ -40,7 +41,7 @@ const acceptSwapOrder = async (req, res) => {
       { 
         artisanAssigned: artisanId, 
         status: 'accepted',
-        estimatedTimeline: timeline // 👈 Isko save karenge
+        estimatedTimeline: timeline // Isko save karenge
       },
       { new: true }
     );
@@ -53,7 +54,6 @@ const acceptSwapOrder = async (req, res) => {
 
 // @route   GET /api/swaps/my-active
 // @desc    Get active orders for the logged-in user
-// @route   GET /api/swaps/my-active
 const getMyActiveSwaps = async (req, res) => {
   try {
     const { userId } = req.query; 
@@ -70,7 +70,7 @@ const getMyActiveSwaps = async (req, res) => {
     })
     .sort({ updatedAt: -1 })
     .populate('artisanAssigned', 'name')
-    .populate('user', 'name'); // 👇 Yeh NAYA add kiya hai taaki artisan ko pata chale kiska kachra hai
+    .populate('user', 'name'); 
 
     res.status(200).json(activeSwaps);
   } catch (error) {
@@ -81,23 +81,18 @@ const getMyActiveSwaps = async (req, res) => {
 
 // @route   GET /api/swaps/history
 // @desc    Get ALL swaps (history) for User or Artisan
-
-
-// Backend: controllers/swapController.js
-
- const getSwapHistory = async (req, res) => {
+const getSwapHistory = async (req, res) => {
   try {
     const { userId } = req.query;
     let filter = {}; 
 
     if (userId) {
-      // 🔥 Yahan humne backend ko bataya: 
       // "Order lao agar user ne upload kiya ho YA FIR artisan ne accept kiya ho"
       filter = {
         $or: [
           { userId: userId },             // Agar client ne upload kiya
           { user: userId },               // Alternate field for client
-          { artisanAssigned: userId }     // 👈 YE NAYI LINE: Agar artisan ne order accept kiya
+          { artisanAssigned: userId }     // Agar artisan ne order accept kiya
         ]
       };
     } else {
@@ -105,7 +100,7 @@ const getMyActiveSwaps = async (req, res) => {
       filter = { status: { $in: ['pending', 'pending_artisan'] } }; 
     }
 
-    const swaps = await Swap.find(filter).sort({ createdAt: -1 });
+    const swaps = await Swap.find(filter).sort({ createdAt: -1 }) .populate('artisanAssigned', 'name');;
     res.status(200).json(swaps);
   } catch (error) {
     console.error("Error fetching history:", error);
@@ -142,16 +137,30 @@ const createSwap = async (req, res) => {
   try {
     const { userId, wasteImage, detectedMaterial, selectedProduct } = req.body;
     
+    // 🔥 1. AI IMAGE GENERATION LOGIC YAHAN ADD KIYA HAI 🔥
+    const imagePrompt = `professional product photography of ${selectedProduct.title}, ${selectedProduct.description}, high quality, highly detailed, white background, studio lighting`;
+    
+    // Hugging Face API call kar rahe hain
+    const generatedImageUrl = await generateImageWithHF(imagePrompt);
+
+    // AI ka diya hua image selectedProduct mein save karenge
+    const finalSelectedProduct = {
+      ...selectedProduct,
+      generatedImage: generatedImageUrl // Agar fail hua toh null save hoga, aur frontend ka placeholder chalega
+    };
+
+    // 🔥 2. DATABASE MEIN SAVE KARNA 🔥
     const newSwap = await Swap.create({
       user: userId,
       wasteImage,
       detectedMaterial,
-      suggestedProducts: [selectedProduct], // Sirf selected wala array mein dalenge
+      suggestedProducts: [finalSelectedProduct], // Updated product array mein daala
       status: 'pending_artisan'
     });
     
     res.status(201).json(newSwap);
   } catch (error) {
+    console.error("❌ Error creating swap:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -176,21 +185,20 @@ const submitFeedback = async (req, res) => {
   }
 };
 
-// backend/controllers/swapController.js ke andar kahin bhi add kardo
-
+// @route   PUT /api/swaps/:id/status
+// @desc    Update swap status generally
 const updateSwapStatus = async (req, res) => {
   try {
-    const { id } = req.params; // Order ki ID URL se milegi
-    const { status, artisanId } = req.body; // Frontend se 'accepted' aur artisan ki ID aayegi
+    const { id } = req.params; 
+    const { status, artisanId } = req.body; 
 
-    // Database mein order dhoondo aur update karo
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       { 
         status: status, 
-        artisanAssigned: artisanId // Artisan ko is order se link kar diya
+        artisanAssigned: artisanId 
       },
-      { new: true } // Naya updated data return karega
+      { new: true } 
     );
 
     if (!updatedSwap) {
@@ -204,15 +212,14 @@ const updateSwapStatus = async (req, res) => {
   }
 };
 
-// module.exports mein isko add karna mat bhoolna:
 module.exports = { 
-  getFeaturedSwaps, getPendingSwaps, acceptSwapOrder, getMyActiveSwaps, 
-  getSwapHistory, completeSwapOrder, createSwap, submitFeedback, updateSwapStatus // 👈 Add this
+  getFeaturedSwaps, 
+  getPendingSwaps, 
+  acceptSwapOrder, 
+  getMyActiveSwaps, 
+  getSwapHistory, 
+  completeSwapOrder, 
+  createSwap, 
+  submitFeedback, 
+  updateSwapStatus 
 };
-
-
-
-
-
-
-
