@@ -14,7 +14,7 @@ const listingSchema = new mongoose.Schema({
   description: { type: String, required: true },
   price: { type: Number, required: true },
   imageUrl: { type: String, required: true },
-  
+  stock: { type: Number, default: 1 },  
   // Specific to 'finished_good' (Artisan's products)
   madeFrom: { type: String, default: 'Mixed Recycled Materials' }, // e.g., "Made from 10kg Old Denim"
   ecoScoreSaved: { type: Number, default: 0 },

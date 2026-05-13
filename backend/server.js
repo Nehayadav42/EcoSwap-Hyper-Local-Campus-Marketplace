@@ -12,6 +12,7 @@ const swapRoutes = require('./routes/swapRoutes');
 const aiRoutes = require('./routes/airoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const listingRoutes = require('./routes/listingRoutes')
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // 👇 YEH MISSING THA! Model import karna zaroori hai
 const Message = require('./models/Message'); 
@@ -34,6 +35,7 @@ app.use('/api/swaps', swapRoutes); // (Maine duplicate line hata di hai)
 app.use('/api/ai', aiRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Socket.io Setup
 const io = new Server(server, {

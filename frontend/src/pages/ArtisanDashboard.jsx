@@ -20,8 +20,9 @@ const ArtisanDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // --- SELL MODAL STATES ---
+  // 🔥 CHANGE 1: Added 'stock: 1' to the state
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
-  const [sellForm, setSellForm] = useState({ title: '', description: '', price: '', madeFrom: '' });
+  const [sellForm, setSellForm] = useState({ title: '', description: '', price: '', madeFrom: '', stock: 1 });
   const [sellImage, setSellImage] = useState(null);
   const [isSubmittingSell, setIsSubmittingSell] = useState(false);
 
@@ -32,11 +33,8 @@ const ArtisanDashboard = () => {
       try {
         const { data } = await axios.get('http://localhost:5000/api/swaps/history');
         
-        // 1. 🔥 YAHAN CONSOLE LOG LAGA DIYA HAI CHECK KARNE KE LIYE
         console.log("Backend se ye data aaya:", data);
 
-        // 2. 🔥 STATUS FILTER THODA LOOSE KAR DIYA HAI
-        // Kyunki shayad backend naye order ko 'pending' naam se save kar raha hai, 'pending_artisan' se nahi!
         const availableRequests = data.filter(req => 
           req.status === 'pending_artisan' || req.status === 'pending'
         );
@@ -98,12 +96,26 @@ const ArtisanDashboard = () => {
                 <input type="text" placeholder="Product Title" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco focus:bg-white text-sm" value={sellForm.title} onChange={e => setSellForm({...sellForm, title: e.target.value})} />
                 <textarea placeholder="Describe how you upcycled this..." rows="3" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco focus:bg-white text-sm" value={sellForm.description} onChange={e => setSellForm({...sellForm, description: e.target.value})}></textarea>
                 
-                <div className="grid grid-cols-2 gap-4">
+                {/* 🔥 CHANGE 2: Grid-cols-3 and added Stock input 🔥 */}
+                <div className="grid grid-cols-3 gap-4">
                   <div className="relative">
                     <span className="absolute left-4 top-3 text-gray-500 font-bold">₹</span>
                     <input type="number" placeholder="Price" className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco text-sm" value={sellForm.price} onChange={e => setSellForm({...sellForm, price: e.target.value})} />
                   </div>
-                  <input type="text" placeholder="Material (e.g. Scrap Metal)" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco text-sm" value={sellForm.madeFrom} onChange={e => setSellForm({...sellForm, madeFrom: e.target.value})} />
+                  
+                  <input type="text" placeholder="Material" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco text-sm" value={sellForm.madeFrom} onChange={e => setSellForm({...sellForm, madeFrom: e.target.value})} />
+                  
+                  <div className="relative">
+                    <span className="absolute left-3 top-3.5 text-gray-400 text-xs font-bold uppercase tracking-wider">Qty:</span>
+                    <input 
+                      type="number" 
+                      min="1"
+                      placeholder="Stock" 
+                      className="w-full pl-11 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco text-sm font-bold text-gray-900"
+                      value={sellForm.stock}
+                      onChange={e => setSellForm({...sellForm, stock: e.target.value})} 
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -116,12 +128,14 @@ const ArtisanDashboard = () => {
                       formData.append('image', sellImage);
                       const uploadRes = await axios.post('http://localhost:5000/api/upload', formData);
 
+                      // 🔥 CHANGE 3: Added stock to the payload 🔥
                       const payload = {
                         sellerId: userInfo._id,
                         listingType: 'finished_good',
                         title: sellForm.title,
                         description: sellForm.description,
                         price: Number(sellForm.price),
+                        stock: Number(sellForm.stock), // Converting stock to a Number
                         imageUrl: uploadRes.data.imageUrl,
                         madeFrom: sellForm.madeFrom
                       };
@@ -129,7 +143,8 @@ const ArtisanDashboard = () => {
                       await axios.post('http://localhost:5000/api/listings/create', payload);
                       toast.success('Product live in Explore page!');
                       setIsSellModalOpen(false);
-                      setSellForm({ title: '', description: '', price: '', madeFrom: '' });
+                      // Resetting form back to default 1 stock
+                      setSellForm({ title: '', description: '', price: '', madeFrom: '', stock: 1 });
                       setSellImage(null);
                     } catch (error) {
                       toast.error('Failed to list product');
@@ -162,8 +177,8 @@ const ArtisanDashboard = () => {
         </button>
       </div>
 
-{/* 3. NEW REQUESTS SECTION */}
-<div>
+      {/* 3. NEW REQUESTS SECTION */}
+      <div>
           <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Clock className="w-5 h-5 text-amber-500" /> New Upcycle Requests
           </h2>
@@ -258,6 +273,5 @@ const ArtisanDashboard = () => {
       </div>
   );
 };
-
 
 export default ArtisanDashboard;

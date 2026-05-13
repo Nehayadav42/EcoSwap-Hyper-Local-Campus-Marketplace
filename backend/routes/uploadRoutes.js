@@ -16,8 +16,8 @@ router.post('/', upload.single('image'), (req, res) => {
       imageUrl: req.file.path // Yeh URL hum DB mein aur AI ko denge
     });
   } catch (error) {
-    console.error("Upload Error:", error);
-    res.status(500).json({ message: 'Image upload failed' });
+    console.error("❌ Asli Upload Error:", error); // ✅ Ye pura error print karega
+    res.status(500).json({ message: error.message || "Upload failed" });
   }
 });
 
