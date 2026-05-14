@@ -12,7 +12,7 @@ router.post('/', createSwap);
 router.put('/:id/status', updateSwapStatus);
 router.put('/:id/accept', acceptSwapOrder);
 router.put('/:id/complete', completeSwapOrder);
-router.post('/:id/feedback', submitFeedback);
+router.put('/:id/feedback', submitFeedback);
 
 
 module.exports = router;

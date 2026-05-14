@@ -1,40 +1,42 @@
-// backend/utils/aiHelpers.js (ya tumhare controller file mein)
 const axios = require('axios');
 
 const generateImageWithHF = async (prompt) => {
   try {
-    // Stable Diffusion v1.5 (Fast aur reliable for free tier)
-    const API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5";
-    
     console.log(`🎨 Generating image for: "${prompt}"...`);
 
+    // Agar Hugging Face ki API key nahi hai, toh seedha fallback par jao
+    if (!process.env.HF_API_KEY) {
+      throw new Error("HF_API_KEY is missing in .env file");
+    }
+
+    // 🔥 FIX: Poora URL daal diya hai yahan 🔥
     const response = await axios.post(
-      API_URL,
+      "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
       { inputs: prompt },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_TOKEN}`,
-          "Content-Type": "application/json",
+      { 
+        headers: { 
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          "Content-Type": "application/json"
         },
-        responseType: "arraybuffer", // ⚠️ Ye bahut zaroori hai image receive karne ke liye!
+        responseType: 'arraybuffer' // Image binary format mein aayegi
       }
     );
 
-    // Buffer ko Base64 mein convert karo taaki browser seedha padh sake
+    // Image ko base64 format mein convert karke return karna (agar Cloudinary use nahi kar rahe directly)
     const base64Image = Buffer.from(response.data, 'binary').toString('base64');
-    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-    
-    console.log("✅ Image successfully generated!");
-    return imageUrl;
+    return `data:image/jpeg;base64,${base64Image}`;
 
-} catch (error) {
-    // Buffer ko text mein convert kar rahe hain taaki exactly error samajh aaye
-    const errorBody = error.response?.data 
-      ? error.response.data.toString('utf8') 
-      : error.message;
-      
-    console.error("❌ HF Image Gen Error:", errorBody);
-    return null; 
+  } catch (error) {
+    // Agar HF server down hai ya timeout ho gaya, toh error print hoga
+    console.error("❌ Hugging Face Error:", error.response ? error.response.data.toString() : error.message);
+    console.log("🔄 AI is busy. Using Free Fast Fallback Generator...");
+
+    // 🔥 THE MASTER HACK: Pollinations AI Fallback 🔥
+    // Agar HF kisi bhi reason se fail hota hai, toh ye 100% free aur bina API key wala generator automatically image bana dega!
+    const encodedPrompt = encodeURIComponent(prompt);
+    const randomSeed = Math.floor(Math.random() * 100000);
+    
+    return `https://image.pollinations.ai/prompt/${encodedPrompt}?width=500&height=500&nologo=true&seed=${randomSeed}`;
   }
 };
 
