@@ -35,7 +35,22 @@ const swapSchema = new mongoose.Schema({
     review: { type: String },
     createdAt: { type: Date, default: Date.now }
   }, 
-  
+  pricing: {
+    basePrice: Number,
+    deliveryFee: Number,
+    platformFee: Number,
+    totalAmount: Number,
+    advanceAmount: Number,
+    distanceKm: String
+  },
+  advancePaymentId: {
+    type: String
+  },
+  pickupDeadline: {
+    type: Date
+  },
+ 
+
   artisanAssigned: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

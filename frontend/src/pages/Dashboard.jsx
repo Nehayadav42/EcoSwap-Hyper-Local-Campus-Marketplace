@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { UploadCloud, Leaf, Award, Loader2, Sparkles, Clock, CheckCircle, X } from 'lucide-react';
+import { UploadCloud, Leaf, Award, Loader2, Sparkles, Clock, CheckCircle, X, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -329,50 +329,85 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* RIGHT CARD: ACTIVE ORDERS */}
-        <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col h-[500px]">
+       {/* RIGHT CARD: ACTIVE ORDERS */}
+       <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col h-[500px]">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Clock className="w-5 h-5 text-eco" /> Active Orders</h2>
           <div className="space-y-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">
             {activeOrders.length === 0 ? (
               <p className="text-gray-400 text-sm text-center mt-10">No active orders</p>
             ) : (
               activeOrders.map((order) => {
-                // Fixed Labels for Progress Bar
+                // 🔥 NEW SYNCHRONIZED STAGES 🔥
                 const stages = [
-                  { key: 'pending_artisan', label: 'Finding' },
-                  { key: 'accepted', label: 'Accepted' },
-                  { key: 'in_progress', label: 'Crafting' },
-                  { key: 'completed', label: 'Done' }
+                  { key: 'pending_artisan', label: 'Finding' },     // Requested
+                  { key: 'pending_advance', label: 'Quoted' },      // Artisan gave quote
+                  { key: 'ready_for_pickup', label: 'Paid' },       // Advance paid
+                  { key: 'picked_up', label: 'Picked' },            // Picked up
+                  { key: 'in_progress', label: 'Crafting' },        // In making
+                  { key: 'completed', label: 'Done' }               // Delivered
                 ];
-                const currentStageIndex = stages.findIndex(s => s.key === order.status);
+                
+                // Find current status logic
+                let currentStageIndex = 0;
+                if (order.status === 'pending' || order.status === 'pending_artisan') currentStageIndex = 0;
+                else if (order.status === 'pending_advance') currentStageIndex = 1;
+                else if (order.status === 'ready_for_pickup') currentStageIndex = 2;
+                else if (order.status === 'picked_up') currentStageIndex = 3;
+                else if (order.status === 'in_progress') currentStageIndex = 4;
+                else if (order.status === 'completed') currentStageIndex = 5;
+
+                const displayTitle = order.selectedProduct?.title || order.suggestedProducts?.[0]?.title || "Custom Item";
+                const isActionRequired = order.status === 'pending_advance';
                 
                 return (
                   <div key={order._id} className="border border-gray-100 p-4 rounded-2xl flex flex-col shadow-sm">
                     <div className="flex gap-3 items-center mb-4">
                       <img src={order.wasteImage} className="w-12 h-12 rounded-lg object-cover border shrink-0" alt="waste" />
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-gray-900 truncate">{order.suggestedProducts?.[0]?.title || "Custom Item"}</h3>
-                        <p className="text-[11px] text-gray-500">{order.artisanAssigned ? `Artisan: ${order.artisanAssigned.name}` : 'Finding Artisan...'}</p>
+                        <h3 className="text-sm font-bold text-gray-900 truncate">{displayTitle}</h3>
+                        <p className="text-[11px] text-gray-500">
+                          {order.artisanAssigned ? `Artisan: ${order.artisanAssigned.name}` : 'Finding Artisan...'}
+                        </p>
                       </div>
                     </div>
+
                     {/* PROGRESS BAR */}
                     <div className="relative mb-5 px-1">
                       <div className="absolute top-1.5 left-2 right-2 h-1 bg-gray-100 rounded-full"></div>
-                      <div className="absolute top-1.5 left-2 h-1 bg-eco rounded-full transition-all duration-700" style={{ width: `${(Math.max(0, currentStageIndex) / (stages.length - 1)) * 100}%`, maxWidth: 'calc(100% - 16px)' }}></div>
+                      <div 
+                        className="absolute top-1.5 left-2 h-1 bg-eco rounded-full transition-all duration-700" 
+                        style={{ width: `${(Math.max(0, currentStageIndex) / (stages.length - 1)) * 100}%`, maxWidth: 'calc(100% - 16px)' }}
+                      ></div>
                       <div className="relative flex justify-between w-full">
                         {stages.map((stage, idx) => (
-                          <div key={stage.key} className="flex flex-col items-center w-10">
+                          <div key={stage.key} className="flex flex-col items-center w-8">
                             <div className={`w-3 h-3 rounded-full border-2 transition-all duration-500 z-10 ${idx <= currentStageIndex ? 'bg-eco border-eco scale-110 shadow-sm' : 'bg-white border-gray-200'}`}></div>
-                            <span className={`text-[8px] font-black mt-2 tracking-wide ${idx <= currentStageIndex ? 'text-eco' : 'text-gray-400'}`}>{stage.label}</span>
+                            <span className={`text-[8px] font-black mt-2 tracking-wide text-center leading-tight ${idx <= currentStageIndex ? 'text-eco' : 'text-gray-400'}`}>{stage.label}</span>
                           </div>
                         ))}
                       </div>
                     </div>
+
                     <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                      {order.estimatedTimeline ? (
-                        <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-md"><Clock className="w-3 h-3" /><span className="text-[10px] font-bold">Ready in {order.estimatedTimeline}</span></div>
-                      ) : <div className="text-[10px] text-gray-400 italic">Processing...</div>}
-                      <button onClick={() => navigate('/chats')} className={`text-[10px] font-black px-3 py-1 rounded-lg transition-all ${order.artisanAssigned ? 'bg-eco text-white shadow-sm' : 'hidden'}`}>CHAT</button>
+                      {isActionRequired ? (
+                        <div className="text-[10px] font-bold text-amber-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> Action required
+                        </div>
+                      ) : order.estimatedTimeline ? (
+                        <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] font-bold">Ready in {order.estimatedTimeline}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-gray-400 italic">Processing...</div>
+                      )}
+
+                      <div className="flex gap-2">
+                         {isActionRequired && (
+                           <button onClick={() => navigate('/swaps')} className="text-[10px] font-black bg-amber-500 text-white px-3 py-1 rounded-lg shadow-sm">PAY NOW</button>
+                         )}
+                         <button onClick={() => navigate('/chats')} className={`text-[10px] font-black px-3 py-1 rounded-lg transition-all ${order.artisanAssigned ? 'bg-eco text-white shadow-sm' : 'hidden'}`}>CHAT</button>
+                      </div>
                     </div>
                   </div>
                 );

@@ -25,19 +25,39 @@ const getPendingSwaps = async (req, res) => {
   }
 };
 
+// @route   PUT /api/swaps/:id/accept
 const acceptSwapOrder = async (req, res) => {
   try {
-    const { artisanId, timeline } = req.body; 
+    const { artisanId, timeline, makingCost } = req.body; 
     const { id } = req.params;
+
+    // 🔥 HACKATHON HACK: AI Delivery Calculator Simulation
+    const distanceKm = (Math.random() * (8 - 1) + 1).toFixed(1); // 1 to 8 km random distance
+    const deliveryFee = Math.round(distanceKm * 12); // ₹12 per km
+    
+    const basePrice = Number(makingCost) || 200; // Default 200 if not provided
+    const platformFee = Math.round(basePrice * 0.05); // 5% platform fee
+    const totalAmount = basePrice + deliveryFee + platformFee;
+    const advanceAmount = Math.round(totalAmount * 0.20); // 20% advance payment
 
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       { 
         artisanAssigned: artisanId, 
-        status: 'accepted',
-        estimatedTimeline: timeline 
+        // Status abhi seedha 'accepted' nahi, pehle advance mangenge
+        status: 'pending_advance',
+        estimatedTimeline: timeline,
+        // Naya pricing data save kar rahe hain
+        pricing: {
+          basePrice,
+          deliveryFee,
+          platformFee,
+          totalAmount,
+          advanceAmount,
+          distanceKm
+        }
       },
-      { returnDocument: 'after' } // 🔥 Fixed Mongoose Warning
+      { returnDocument: 'after' } 
     );
 
     res.status(200).json(updatedSwap);
@@ -215,6 +235,33 @@ const updateSwapStatus = async (req, res) => {
   }
 };
 
+// @route   PUT /api/swaps/:id/advance-paid
+const confirmAdvancePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentId } = req.body;
+
+    // 48 Hours ka deadline set karo
+    const deadline = new Date();
+    deadline.setHours(deadline.getHours() + 48);
+
+    const updatedSwap = await Swap.findByIdAndUpdate(
+      id,
+      { 
+        status: 'ready_for_pickup', // Ab artisan ja sakta hai
+        pickupDeadline: deadline,
+        advancePaymentId: paymentId
+      },
+      { returnDocument: 'after' } 
+    );
+
+    res.status(200).json({ message: "Advance Paid! Artisan notified.", swap: updatedSwap });
+  } catch (error) {
+    console.error("Error confirming advance:", error);
+    res.status(500).json({ message: 'Failed to update payment status' });
+  }
+};
+
 module.exports = { 
   getFeaturedSwaps, 
   getPendingSwaps, 
@@ -224,5 +271,6 @@ module.exports = {
   completeSwapOrder, 
   createSwap, 
   submitFeedback, 
-  updateSwapStatus 
+  updateSwapStatus,
+  confirmAdvancePayment
 };
