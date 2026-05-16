@@ -135,6 +135,28 @@ const Explore = () => {
     (item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
      item.description?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  const handleContactArtisan = async (product) => {
+    const targetArtisanId = product.sellerId || product.seller || product.artisanId;
+    if (!targetArtisanId) return toast.error("Artisan details missing!");
+
+    const toastId = toast.loading("Opening chat room...");
+    
+    try {
+      // Backend ko call karo naya room banane ke liye
+      const { data } = await axios.post('http://localhost:5000/api/swaps/inquiry', {
+        userId: userInfo._id,
+        artisanId: targetArtisanId,
+        product: product
+      });
+      
+      toast.dismiss(toastId);
+      // Naye room ki ID ke sath Chats page par chale jao
+      navigate('/chats', { state: { autoOpenChatId: data._id } });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to start chat.", { id: toastId });
+    }
+  };
 
   // ================= REUSABLE CARD COMPONENT =================
   const renderListingCard = (item, isRawMaterial = false) => (
@@ -390,7 +412,7 @@ const Explore = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => { setIsModalOpen(false); navigate('/chats'); }}
+                  onClick={() => { handleContactArtisan(product) }}
                   className="w-full mt-6 bg-gray-900 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-eco transition-colors shadow-lg"
                 >
                   <MessageCircle className="w-5 h-5" /> Message Artisan

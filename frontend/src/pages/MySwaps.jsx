@@ -241,8 +241,8 @@ const MySwaps = () => {
                   </div>
                 )}
 
-                {/* 🔥 ACTION AREA (FIXED) 🔥 */}
-                {isCompleted ? (
+              {/* ACTION AREA */}
+              {isCompleted ? (
                   <div className="pt-4 border-t border-emerald-100/50 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-3">
                       <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-full"><Award className="w-6 h-6" /></div>
@@ -262,10 +262,18 @@ const MySwaps = () => {
                   </div>
                 ) : (
                   <div className="pt-4 border-t border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    {/* ARTISAN GETS THE STATUS BUTTON NOW! */}
                     {isArtisan ? (
                       <>
-                        <p className="text-xs text-gray-500 font-medium">Update the status once you complete the current step.</p>
+                        {/* 🔥 CASH TO COLLECT ALERT (NEW LOGIC) 🔥 */}
+                        {swap.status === 'in_progress' && swap.pricing ? (
+                          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm px-4 py-2 rounded-xl font-black flex items-center gap-2 shadow-sm">
+                            <span>Collect Cash at Doorstep:</span>
+                            <span className="text-lg">₹{swap.pricing.totalAmount - swap.pricing.advanceAmount}</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 font-medium">Update the status once you complete the current step.</p>
+                        )}
+                        
                         <button 
                           onClick={() => handleUpdateStatus(swap._id, swap.status)}
                           disabled={btnDetails.disabled}

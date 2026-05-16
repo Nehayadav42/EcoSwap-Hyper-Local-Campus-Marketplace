@@ -1,284 +1,211 @@
-import { useState, useEffect, useRef } from 'react';
-import { Send, User, MessageSquare, Clock, ImageIcon, Edit2, Trash2, X, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { motion } from 'framer-motion';
-import { io } from 'socket.io-client';
-
-// Backend se connect karo
-const socket = io('http://localhost:5000');
+import { Send, Package, User, CheckCircle, Loader2, ArrowLeft, Edit2, Trash2, Ban } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const Chats = () => {
-  const [activeOrders, setActiveOrders] = useState([]);
+  const navigate = useNavigate();
+  const location = useLocation(); 
+  
+  const [activeSwaps, setActiveSwaps] = useState([]);
   const [selectedSwap, setSelectedSwap] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingMessageId, setEditingMessageId] = useState(null);
   
-  // Edit mode state
-  const [editMode, setEditMode] = useState({ active: false, msgId: null, text: "" });
-  const messagesEndRef = useRef(null);
-
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
   const isArtisan = userInfo.role === 'artisan';
+  const messagesEndRef = useRef(null);
 
-  // 1. Fetch Orders List
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchActiveOrders = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/swaps/my-active?userId=${userInfo._id}`);
-        const chatableOrders = data.filter(order => order.status === 'accepted' || order.status === 'in_progress');
-        setActiveOrders(chatableOrders);
-        if (chatableOrders.length > 0) setSelectedSwap(chatableOrders[0]); 
-      } catch (error) {
-        console.error("Failed to load orders for chat", error);
+        const { data } = await axios.get(`http://localhost:5000/api/swaps/history?userId=${userInfo._id}`);
+        if (Array.isArray(data)) {
+          let myOrders = data.filter(swap => {
+            if (swap.status === 'completed') return false; 
+            if (isArtisan) {
+              return swap.artisanAssigned?._id === userInfo._id || swap.artisanAssigned === userInfo._id;
+            } else {
+              return swap.user?._id === userInfo._id || swap.user === userInfo._id;
+            }
+          });
+          
+          setActiveSwaps(myOrders);
+
+          // 🔥 PERFECT AUTO-OPEN LOGIC 🔥
+          if (location.state?.autoOpenChatId) {
+            const target = myOrders.find(s => s._id === location.state.autoOpenChatId);
+            if (target) setSelectedSwap(target);
+          } else if (myOrders.length > 0) {
+            setSelectedSwap(myOrders[0]);
+          }
+        }
+      } catch (error) { 
+        console.error(error); 
+      } finally { 
+        setIsLoading(false); 
       }
     };
-    if (userInfo._id) fetchOrders();
-  }, [userInfo._id]);
+    fetchActiveOrders();
+    // eslint-disable-next-line
+  }, [isArtisan, userInfo._id, location.state]);
 
-  // 2. Fetch Initial Messages when a chat is selected
-  const fetchMessages = async (swapId) => {
+  const fetchMessages = async () => {
+    if (!selectedSwap) return;
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/chats/${swapId}`);
+      const { data } = await axios.get(`http://localhost:5000/api/chats/${selectedSwap._id}`);
       setMessages(data);
-    } catch (error) {
-      console.error("Failed to load messages", error);
-    }
+    } catch (error) { console.error(error); }
   };
 
-  // 3. Socket.io Logic (Real-time magic)
   useEffect(() => {
-    if (!selectedSwap) return;
-
-    // Load initial DB messages
-    fetchMessages(selectedSwap._id);
-
-    // Join the specific room for this order
-    socket.emit('join_chat', selectedSwap._id);
-
-    // Listeners for real-time events
-    const handleReceive = (msg) => setMessages((prev) => [...prev, msg]);
-    
-    const handleEdited = ({ msgId, newText }) => {
-      setMessages((prev) => prev.map(m => m._id === msgId ? { ...m, text: newText, isEdited: true } : m));
-    };
-
-    const handleDeleted = ({ msgId }) => {
-      setMessages((prev) => prev.map(m => m._id === msgId ? { ...m, text: "🚫 This message was deleted", isDeleted: true } : m));
-    };
-
-    socket.on('receive_message', handleReceive);
-    socket.on('message_saved', handleReceive);
-    socket.on('message_edited', handleEdited);
-    socket.on('message_deleted', handleDeleted);
-
-    // Cleanup listeners when switching chats
-    return () => {
-      socket.off('receive_message', handleReceive);
-      socket.off('message_saved', handleReceive);
-      socket.off('message_edited', handleEdited);
-      socket.off('message_deleted', handleDeleted);
-    };
+    let interval;
+    if (selectedSwap) {
+      fetchMessages();
+      interval = setInterval(fetchMessages, 3000); 
+    }
+    return () => clearInterval(interval);
   }, [selectedSwap]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 4. Send or Edit Message
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedSwap) return;
+    const msgText = newMessage;
+    setNewMessage(''); 
 
-    if (editMode.active) {
-      // Edit mode workflow
-      socket.emit('edit_message', { swapId: selectedSwap._id, msgId: editMode.msgId, newText: newMessage });
-      setEditMode({ active: false, msgId: null, text: "" });
-    } else {
-      // New message workflow
-      socket.emit('send_message', {
-        swapId: selectedSwap._id,
-        senderId: userInfo._id,
-        text: newMessage
-      });
-    }
-    setNewMessage("");
-  };
-
-  // 5. Delete Message
-  const handleDelete = (msgId) => {
-    if(window.confirm("Are you sure you want to delete this message?")) {
-      socket.emit('delete_message', { swapId: selectedSwap._id, msgId });
+    try {
+      if (editingMessageId) {
+        await axios.put(`http://localhost:5000/api/chats/${editingMessageId}`, { text: msgText });
+        setEditingMessageId(null);
+        toast.success("Message edited");
+      } else {
+        await axios.post('http://localhost:5000/api/chats', {
+          swapId: selectedSwap._id, 
+          senderId: userInfo._id,
+          text: msgText
+        });
+      }
+      fetchMessages(); 
+    } catch (error) { 
+      toast.error("Failed to send message"); 
     }
   };
 
-  const getDisplayName = (order) => {
-    if (!order) return "User";
-    return isArtisan ? (order.user?.name || "Eco Member") : (order.artisanAssigned?.name || "Artisan");
+  const startEditing = (msg) => { setEditingMessageId(msg._id); setNewMessage(msg.text); };
+  const cancelEdit = () => { setEditingMessageId(null); setNewMessage(''); };
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/chats/${msgId}`);
+      toast.success("Message deleted");
+      fetchMessages();
+    } catch (error) { toast.error("Failed to delete message"); }
   };
+
+  if (isLoading) return <div className="flex justify-center items-center h-[70vh]"><Loader2 className="w-10 h-10 animate-spin text-eco" /></div>;
 
   return (
-    <div className="max-w-6xl mx-auto h-[80vh] bg-white rounded-3xl border border-gray-200 shadow-sm flex overflow-hidden">
+    <div className="max-w-6xl mx-auto h-[85vh] flex flex-col md:flex-row bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
       
-      {/* Sidebar: Active Chats List */}
-      <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
-        <div className="p-6 border-b border-gray-200 bg-white">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-eco" /> Messages
+      {/* SIDEBAR */}
+      <div className={`w-full md:w-1/3 bg-gray-50 border-r border-gray-100 flex flex-col ${selectedSwap ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-6 bg-gray-900 text-white">
+          <h2 className="text-xl font-black flex items-center gap-2">
+            <Package className="w-6 h-6 text-eco" /> Active Chats
           </h2>
         </div>
-        
-        <div className="overflow-y-auto flex-1 p-4 space-y-2">
-          {activeOrders.length === 0 ? (
-            <div className="text-center text-gray-500 mt-10 text-sm">
-              No active chats available.
-            </div>
-          ) : (
-            activeOrders.map(order => (
+        <div className="flex-1 overflow-y-auto hide-scrollbar p-4 space-y-3">
+          {activeSwaps.map((swap) => {
+            const isActive = selectedSwap?._id === swap._id;
+            const title = swap.selectedProduct?.title || swap.suggestedProducts?.[0]?.title || "Custom Order";
+            const isInquiry = swap.detectedMaterial === 'Product Inquiry';
+            
+            return (
               <div 
-                key={order._id} 
-                onClick={() => setSelectedSwap(order)}
-                className={`p-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 ${selectedSwap?._id === order._id ? 'bg-eco-light/30 border-eco-border border' : 'bg-white border border-transparent hover:border-gray-200'}`}
+                key={swap._id} onClick={() => setSelectedSwap(swap)}
+                className={`p-4 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-eco-light/20 border-eco/50 shadow-sm' : 'bg-white border-gray-100 hover:border-eco/30'}`}
               >
-                <img src={order.wasteImage} alt="item" className="w-12 h-12 rounded-lg object-cover" />
-                <div className="flex-1 overflow-hidden">
-                  <h4 className="text-sm font-bold text-gray-900 truncate">
-                    {order.suggestedProducts?.[0]?.title || "Custom Order"}
-                  </h4>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-1 truncate">
-                    <User className="w-3 h-3" /> {getDisplayName(order)}
-                  </p>
-                </div>
+                <h3 className={`font-bold text-sm line-clamp-1 ${isActive ? 'text-eco-dark' : 'text-gray-900'}`}>{title}</h3>
+                <span className={`text-[9px] uppercase font-bold tracking-wider mt-1 block ${isInquiry ? 'text-blue-500' : 'text-gray-400'}`}>
+                  {isInquiry ? '🛒 Product Inquiry' : '🛠️ Swap Request'}
+                </span>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
+      {/* CHAT INTERFACE */}
+      <div className={`w-full md:w-2/3 flex flex-col h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50/50 ${!selectedSwap ? 'hidden md:flex' : 'flex'}`}>
         {selectedSwap ? (
           <>
-            <div className="p-4 border-b border-gray-200 flex items-center gap-4 bg-white shadow-sm z-10">
-              <img src={selectedSwap.wasteImage} alt="item" className="w-10 h-10 rounded-full object-cover" />
-              <div>
-                <h3 className="font-bold text-gray-900">{selectedSwap.suggestedProducts?.[0]?.title}</h3>
-                <p className="text-xs text-green-600 font-medium flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Chatting with {getDisplayName(selectedSwap)}
-                </p>
+            <div className="p-4 md:p-6 bg-white border-b border-gray-100 shadow-sm flex items-center justify-between z-10">
+              <div className="flex items-center gap-4">
+                <button className="md:hidden p-2 bg-gray-100 rounded-full" onClick={() => setSelectedSwap(null)}><ArrowLeft className="w-5 h-5 text-gray-700" /></button>
+                <div>
+                  <h2 className="font-black text-gray-900 text-lg">{selectedSwap.selectedProduct?.title || "Custom Order"}</h2>
+                  <p className="text-xs text-gray-500 font-medium flex items-center gap-1"><User className="w-3 h-3" /> {isArtisan ? "Client Chat" : "Artisan Chat"}</p>
+                </div>
               </div>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto bg-gray-50 space-y-4">
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                  <Clock className="w-8 h-8 mb-2 opacity-50" />
-                  <p className="text-sm">Start the conversation!</p>
-                </div>
-              ) : (
-                messages.map((msg, idx) => {
-                  // 1. Bulletproof Identity Check (DB 'sender' aur Socket 'senderId' dono ke liye)
-                  const msgSenderId = msg.sender?._id || msg.sender || msg.senderId;
-                  const isMe = msgSenderId === userInfo._id; 
-                  
-                  return (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      key={msg._id || idx} 
-                      className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {/* 2. Flex Row Setup taaki buttons side mein perfectly fit hon */}
-                      <div className={`flex items-center gap-2 group max-w-[75%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                        
-                        {/* Message Bubble */}
-                        <div className={`p-3 rounded-2xl text-sm shadow-sm ${
-                          msg.isDeleted ? 'bg-gray-100 text-gray-400 italic border border-gray-200' :
-                          isMe ? 'bg-eco text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
-                        }`}>
-                          {msg.text}
-                          
-                          {/* Edited Status right inside bubble */}
-                          {msg.isEdited && !msg.isDeleted && (
-                            <span className="block text-[9px] mt-1 opacity-70 text-right">
-                              (Edited)
-                            </span>
-                          )}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+              <div className="text-center my-4">
+                <span className="bg-white/80 border border-gray-200 text-gray-400 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm">
+                  {selectedSwap.detectedMaterial === 'Product Inquiry' ? 'Product Inquiry Channel' : 'Order Chat Started'}
+                </span>
+              </div>
+              
+              {messages.map((msg) => {
+                const isMe = msg.sender === userInfo._id; 
+                return (
+                  <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                    <div className="flex flex-col max-w-[75%] relative">
+                      {isMe && !msg.isDeleted && (
+                        <div className="absolute -top-3 right-0 hidden group-hover:flex bg-white shadow-md border border-gray-100 rounded-lg overflow-hidden z-10">
+                          <button onClick={() => startEditing(msg)} className="p-1.5 text-gray-500 hover:text-blue-500 hover:bg-gray-50"><Edit2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => handleDeleteMessage(msg._id)} className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-gray-50"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
-            
-                        {/* 3. Action Buttons (Ab ye bagal mein smoothly fade-in honge) */}
-                        {isMe && !msg.isDeleted && (
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 px-1">
-                            <button 
-                              onClick={() => { setEditMode({ active: true, msgId: msg._id, text: msg.text }); setNewMessage(msg.text); }} 
-                              className="bg-gray-100 text-gray-500 hover:text-blue-500 hover:bg-blue-100 p-1.5 rounded-full transition-colors"
-                              title="Edit Message"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button 
-                              onClick={() => handleDelete(msg._id)} 
-                              className="bg-gray-100 text-gray-500 hover:text-red-500 hover:bg-red-100 p-1.5 rounded-full transition-colors"
-                              title="Delete Message"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                        
+                      )}
+                      <div className={`px-5 py-3 rounded-2xl shadow-sm ${msg.isDeleted ? 'bg-gray-100 text-gray-500 italic' : isMe ? 'bg-eco text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none'}`}>
+                        {msg.isDeleted ? <p className="text-sm font-medium opacity-80 flex items-center gap-1"><Ban className="w-3 h-3" /> Message Deleted</p> : <p className="text-sm font-medium">{msg.text}</p>}
                       </div>
-                    </motion.div>
-                  );
-                })
-              )}
+                    </div>
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
-            <div className="bg-white border-t border-gray-200 p-4">
-              {/* Edit Mode Indicator */}
-              {editMode.active && (
-                <div className="flex justify-between items-center text-xs font-bold text-blue-600 bg-blue-50 p-2.5 rounded-xl mb-3 border border-blue-100">
-                  <div className="flex items-center gap-2">
-                    <Edit2 className="w-4 h-4" /> Editing message...
-                  </div>
-                  <button onClick={() => { setEditMode({ active: false, msgId: null, text: "" }); setNewMessage(""); }} className="hover:text-blue-800 bg-blue-100 p-1 rounded-full"><X className="w-4 h-4" /></button>
+            <div className="p-4 bg-white border-t border-gray-100 z-10">
+              {editingMessageId && (
+                <div className="flex justify-between items-center bg-blue-50 text-blue-600 px-4 py-2 rounded-t-xl text-xs font-bold border-b border-blue-100">
+                  <span className="flex items-center gap-1"><Edit2 className="w-3 h-3"/> Editing Message</span>
+                  <button onClick={cancelEdit} className="hover:text-red-500"><Ban className="w-3 h-3"/></button>
                 </div>
               )}
-
-              <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
-                <button type="button" className="p-3 text-gray-400 hover:text-eco transition-colors">
-                  <ImageIcon className="w-5 h-5" />
-                </button>
-                <input 
-                  type="text" 
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message here..." 
-                  className={`flex-1 border-transparent focus:ring-0 rounded-xl px-4 py-3 outline-none transition-all text-sm ${
-                    editMode.active ? 'bg-blue-50 focus:bg-white focus:border-blue-300 border' : 'bg-gray-100 focus:bg-white focus:border-eco border'
-                  }`}
-                />
-                <button 
-                  type="submit" 
-                  disabled={!newMessage.trim()}
-                  className={`p-3 rounded-xl text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    editMode.active ? 'bg-blue-500 hover:bg-blue-600' : 'bg-eco hover:bg-eco-dark'
-                  }`}
-                >
-                  {editMode.active ? <Check className="w-5 h-5" /> : <Send className="w-5 h-5" />}
+              <form onSubmit={handleSendMessage} className={`flex items-center gap-3 bg-gray-50 p-2 border border-gray-200 focus-within:bg-white transition-colors shadow-inner ${editingMessageId ? 'rounded-b-2xl rounded-t-none border-t-0 border-blue-200' : 'rounded-2xl focus-within:border-eco'}`}>
+                <input type="text" placeholder={selectedSwap.detectedMaterial === 'Product Inquiry' ? "Ask artisan about restock..." : "Type your message..."} className="flex-1 bg-transparent outline-none px-4 text-sm font-medium" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
+                <button type="submit" disabled={!newMessage.trim()} className="bg-eco text-white p-3 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all shadow-md">
+                  <Send className="w-5 h-5 ml-0.5" />
                 </button>
               </form>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
-            <MessageSquare className="w-12 h-12 mb-3 opacity-20" />
-            <p>Select an order from the left to start chatting</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-white m-8 rounded-[2rem] border-2 border-dashed border-gray-200">
+            <Package className="w-16 h-16 mb-4 text-gray-300" />
+            <h3 className="text-xl font-bold text-gray-600">No Chat Selected</h3>
+            <p className="text-sm mt-1">Select an active order or inquiry to start messaging.</p>
           </div>
         )}
       </div>
-
     </div>
   );
 };

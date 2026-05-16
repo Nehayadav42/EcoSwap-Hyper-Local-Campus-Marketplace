@@ -13,14 +13,53 @@ const getMessages = async (req, res) => {
 
 // @route   POST /api/chats
 // @desc    Send a new message
+// @route   POST /api/chats
+// @desc    Send a new message
 const sendMessage = async (req, res) => {
   try {
     const { swapId, senderId, text } = req.body;
-    const newMessage = await Message.create({ swapId, senderId, text });
+    // 🔥 FIX: 'sender' use kiya jo tumhare Message model mein hai
+    const newMessage = await Message.create({ swapId, sender: senderId, text }); 
     res.status(201).json(newMessage);
   } catch (error) {
     res.status(500).json({ message: 'Failed to send message' });
   }
 };
 
-module.exports = { getMessages, sendMessage };
+// @route   PUT /api/chats/:messageId
+// @desc    Edit a message
+const editMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { text } = req.body;
+    
+    const updatedMessage = await Message.findByIdAndUpdate(
+      messageId,
+      { text: text, isEdited: true },
+      { new: true }
+    );
+    res.status(200).json(updatedMessage);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to edit message' });
+  }
+};
+
+// @route   DELETE /api/chats/:messageId
+// @desc    Delete a message (Soft delete like WhatsApp)
+const deleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    
+    const deletedMessage = await Message.findByIdAndUpdate(
+      messageId,
+      { text: "🚫 This message was deleted", isDeleted: true },
+      { new: true }
+    );
+    res.status(200).json(deletedMessage);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete message' });
+  }
+};
+
+module.exports = { getMessages, sendMessage, editMessage, deleteMessage };
+

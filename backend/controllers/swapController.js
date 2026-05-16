@@ -1,4 +1,5 @@
 const Swap = require('../models/Swap');
+const User = require('../models/User'); 
 const { generateImageWithHF } = require('../utils/aiHelpers');
 
 const getFeaturedSwaps = async (req, res) => {
@@ -25,29 +26,25 @@ const getPendingSwaps = async (req, res) => {
   }
 };
 
-// @route   PUT /api/swaps/:id/accept
 const acceptSwapOrder = async (req, res) => {
   try {
     const { artisanId, timeline, makingCost } = req.body; 
     const { id } = req.params;
 
-    // 🔥 HACKATHON HACK: AI Delivery Calculator Simulation
-    const distanceKm = (Math.random() * (8 - 1) + 1).toFixed(1); // 1 to 8 km random distance
-    const deliveryFee = Math.round(distanceKm * 12); // ₹12 per km
+    const distanceKm = (Math.random() * (8 - 1) + 1).toFixed(1); 
+    const deliveryFee = Math.round(distanceKm * 12); 
     
-    const basePrice = Number(makingCost) || 200; // Default 200 if not provided
-    const platformFee = Math.round(basePrice * 0.05); // 5% platform fee
+    const basePrice = Number(makingCost) || 200; 
+    const platformFee = Math.round(basePrice * 0.05); 
     const totalAmount = basePrice + deliveryFee + platformFee;
-    const advanceAmount = Math.round(totalAmount * 0.20); // 20% advance payment
+    const advanceAmount = Math.round(totalAmount * 0.20); 
 
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       { 
         artisanAssigned: artisanId, 
-        // Status abhi seedha 'accepted' nahi, pehle advance mangenge
         status: 'pending_advance',
         estimatedTimeline: timeline,
-        // Naya pricing data save kar rahe hain
         pricing: {
           basePrice,
           deliveryFee,
@@ -118,7 +115,7 @@ const completeSwapOrder = async (req, res) => {
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       { status: 'completed' },
-      { returnDocument: 'after' } // 🔥 Fixed Mongoose Warning
+      { returnDocument: 'after' } 
     );
 
     if (!updatedSwap) {
@@ -132,18 +129,15 @@ const completeSwapOrder = async (req, res) => {
   }
 };
 
-// 🔥 BULLETPROOF CREATE SWAP 🔥
 const createSwap = async (req, res) => {
   try {
     const { userId, wasteImage, detectedMaterial, selectedProduct } = req.body;
     
     const imagePrompt = `professional product photography of ${selectedProduct.title}, ${selectedProduct.description}, high quality, highly detailed, white background, studio lighting`;
     
-    // Default Placeholder Image in case HF fails
     let finalImageUrl = `https://placehold.co/400x400/dcfce7/166534?font=Montserrat&text=${encodeURIComponent(selectedProduct.title)}`;
 
     try {
-      // HF API Call ko try catch mein wrap kar diya!
       const generatedImageUrl = await generateImageWithHF(imagePrompt);
       if (generatedImageUrl) {
          finalImageUrl = generatedImageUrl;
@@ -154,7 +148,7 @@ const createSwap = async (req, res) => {
 
     const finalSelectedProduct = {
       ...selectedProduct,
-      generatedImage: finalImageUrl // Ab image 100% jaayegi database mein
+      generatedImage: finalImageUrl 
     };
 
     const newSwap = await Swap.create({
@@ -172,14 +166,11 @@ const createSwap = async (req, res) => {
   }
 };
 
-const User = require('../models/User'); // Artisan ka data update karne ke liye
-
 const submitFeedback = async (req, res) => {
   try {
     const { rating, review } = req.body;
-    const { id } = req.params; // Order ID
+    const { id } = req.params; 
 
-    // 1. Order ko update karo feedback ke saath
     const swap = await Swap.findByIdAndUpdate(
       id,
       { feedback: { rating, review } },
@@ -190,14 +181,12 @@ const submitFeedback = async (req, res) => {
 
     const artisan = await User.findById(swap.artisanAssigned._id);
     
-    // 2. Artisan ki overall ranking update karne ka logic
     const oldTotalReviews = artisan.totalReviews || 0;
     const oldRating = artisan.rating || 0;
     
     const newTotalReviews = oldTotalReviews + 1;
     const newAverageRating = ((oldRating * oldTotalReviews) + Number(rating)) / newTotalReviews;
 
-    // 3. Artisan model update karo
     await User.findByIdAndUpdate(swap.artisanAssigned._id, {
       rating: newAverageRating.toFixed(1),
       totalReviews: newTotalReviews
@@ -214,14 +203,13 @@ const updateSwapStatus = async (req, res) => {
     const { id } = req.params; 
     const { status, artisanId } = req.body; 
 
-    // Find Query update ki taaki artisanId sirf tab assign ho jab bheja jaye
     const updateQuery = { status: status };
     if (artisanId) updateQuery.artisanAssigned = artisanId;
 
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       updateQuery,
-      { returnDocument: 'after' } // 🔥 Fixed Mongoose Warning
+      { returnDocument: 'after' } 
     );
 
     if (!updatedSwap) {
@@ -235,20 +223,18 @@ const updateSwapStatus = async (req, res) => {
   }
 };
 
-// @route   PUT /api/swaps/:id/advance-paid
 const confirmAdvancePayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { paymentId } = req.body;
 
-    // 48 Hours ka deadline set karo
     const deadline = new Date();
     deadline.setHours(deadline.getHours() + 48);
 
     const updatedSwap = await Swap.findByIdAndUpdate(
       id,
       { 
-        status: 'ready_for_pickup', // Ab artisan ja sakta hai
+        status: 'ready_for_pickup', 
         pickupDeadline: deadline,
         advancePaymentId: paymentId
       },
@@ -262,6 +248,36 @@ const confirmAdvancePayment = async (req, res) => {
   }
 };
 
+// 🔥 BULLETPROOF INQUIRY CREATION 🔥
+const createInquirySwap = async (req, res) => {
+  try {
+    const { userId, artisanId, product } = req.body;
+
+    // Adding Fallbacks so Mongoose doesn't crash on missing data
+    const safeTitle = product?.title || 'Custom Product';
+    const safeImage = product?.imageUrl || `https://placehold.co/400x400/dcfce7/166534?font=Montserrat&text=${encodeURIComponent(safeTitle)}`;
+
+    const newInquiry = await Swap.create({
+      user: userId,
+      artisanAssigned: artisanId,
+      wasteImage: safeImage, 
+      detectedMaterial: "Product Inquiry",
+      selectedProduct: {
+        title: `Inquiry: ${safeTitle}`,
+        description: product?.description || "Inquiring about this item",
+        imageUrl: safeImage,
+        generatedImage: safeImage
+      },
+      status: 'accepted' // Keep it accepted so it shows up in Active Chats immediately
+    });
+
+    res.status(201).json(newInquiry);
+  } catch (error) {
+    console.error("❌ Inquiry Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = { 
   getFeaturedSwaps, 
   getPendingSwaps, 
@@ -272,5 +288,6 @@ module.exports = {
   createSwap, 
   submitFeedback, 
   updateSwapStatus,
-  confirmAdvancePayment
+  confirmAdvancePayment,
+  createInquirySwap,
 };

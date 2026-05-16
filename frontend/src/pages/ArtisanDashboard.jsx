@@ -195,18 +195,25 @@ const ArtisanDashboard = () => {
                     <img src={targetImage} className="w-20 h-20 object-cover rounded-xl bg-white border border-eco/30" alt="target" />
                     
                     <div className="flex-1 px-2">
-                      <h3 className="font-bold text-gray-900 text-sm line-clamp-1">{productTitle}</h3>
-                      {order.pricing && (
-                         <div className="mt-1 text-xs font-bold text-gray-500">Earnings: <span className="text-eco">₹{order.pricing.basePrice}</span></div>
-                      )}
-                      <button onClick={() => navigate('/chats')} className="text-xs text-eco font-bold mt-1 hover:underline">Message Customer</button>
-                    </div>
+                    <h3 className="font-bold text-gray-900 text-sm line-clamp-1">{productTitle}</h3>
+                    {order.pricing && (
+                       <div className="mt-1 text-xs font-bold text-gray-500">Total Bill: <span className="text-eco">₹{order.pricing.totalAmount}</span></div>
+                    )}
+                    <button onClick={() => navigate('/chats')} className="text-xs text-eco font-bold mt-1 hover:underline">Message Customer</button>
+                  </div>
                   </div>
 
                   {order.status === 'ready_for_pickup' && (
                     <div className="bg-amber-50 border border-amber-100 text-amber-700 text-xs p-3 rounded-xl mb-4 font-medium flex gap-2">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       Advance paid! You must pick up the raw material within 48 hours.
+                    </div>
+                  )}
+                  {/* 🔥 NEW: CASH TO COLLECT ALERT 🔥 */}
+                  {order.status === 'in_progress' && order.pricing && (
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-3 rounded-xl mb-4 font-black flex justify-between items-center shadow-inner">
+                      <span>Collect at Doorstep:</span>
+                      <span className="text-lg">₹{order.pricing.totalAmount - order.pricing.advanceAmount}</span>
                     </div>
                   )}
 
