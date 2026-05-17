@@ -99,7 +99,7 @@ const Login = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-eco" aria-hidden />
               City &amp; state
             </label>
