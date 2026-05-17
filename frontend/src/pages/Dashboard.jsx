@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { UploadCloud, Leaf, Award, Loader2, Sparkles, Clock, CheckCircle, X, AlertCircle } from 'lucide-react';
+import { UploadCloud, Leaf, Award, Loader2, Sparkles, Clock, CheckCircle, X, AlertCircle, Package, Tag, Layers, IndianRupee, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -24,8 +24,9 @@ const Dashboard = () => {
 
   // --- SELL MODAL STATES ---
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
-  const [sellForm, setSellForm] = useState({ title: '', description: '', price: '', madeFrom: '' });
+  const [sellForm, setSellForm] = useState({ title: '', description: '', price: '', madeFrom: '', quantity: '1' });
   const [sellImage, setSellImage] = useState(null);
+  const [sellImagePreview, setSellImagePreview] = useState(null);
   const [isSubmittingSell, setIsSubmittingSell] = useState(false);
   
   const userInfo = JSON.parse(localStorage.getItem('ecoswap_user')) || {};
@@ -35,7 +36,6 @@ const Dashboard = () => {
     if (!userInfo._id) return;
     try {
       const { data } = await axios.get(`http://localhost:5000/api/swaps/history?userId=${userInfo._id}`);
-      console.log("Dashboard Orders API Response:", data); //
       setActiveOrders(data.filter(order => order.status !== 'completed'));
 
       const completed = data.filter(order => order.status === 'completed');
@@ -69,6 +69,23 @@ const Dashboard = () => {
       setIsAnalyzing(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleSellFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSellImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSellImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeSellImage = () => {
+    setSellImage(null);
+    setSellImagePreview(null);
   };
 
   const handleConfirmSwap = async () => {
@@ -134,103 +151,131 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* 2. SELL ITEM MODAL (NEW) */}
+      {/* 2. PREMIUM SELL ITEM MODAL */}
       <AnimatePresence>
         {isSellModalOpen && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm"
           >
-            <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-[2rem] w-full max-w-3xl overflow-hidden shadow-2xl relative flex flex-col max-h-[95vh]">
               
               <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                  <Package className="w-6 h-6 text-eco" />
                   {isArtisan ? 'List Upcycled Product' : 'List Raw Material'}
                 </h2>
-                <button onClick={() => setIsSellModalOpen(false)} className="p-2 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm"><X className="w-5 h-5"/></button>
+                <button onClick={() => { setIsSellModalOpen(false); removeSellImage(); }} className="p-2 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors"><X className="w-5 h-5"/></button>
               </div>
 
-              <div className="p-6 overflow-y-auto space-y-4">
-                {/* File Upload Area */}
-                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-eco hover:bg-eco-light/10 transition-colors cursor-pointer relative">
-                  <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => setSellImage(e.target.files[0])} />
-                  {sellImage ? (
-                    <p className="font-bold text-eco text-sm">Image Selected: {sellImage.name}</p>
+              <div className="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                
+                {/* Image Upload Area */}
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-2">
+                    <UploadCloud className="w-4 h-4 text-eco" /> Image *
+                  </label>
+                  {sellImagePreview ? (
+                    <div className="relative inline-block mt-2 p-2 bg-gray-50 border border-gray-200 rounded-xl">
+                      <img src={sellImagePreview} alt="Preview" className="h-40 w-40 object-cover rounded-lg shadow-sm" />
+                      <button 
+                        type="button" onClick={removeSellImage}
+                        className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 shadow-md transition-colors z-10"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   ) : (
-                    <>
-                      <UploadCloud className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="font-bold text-gray-700 text-sm">Click to upload product image</p>
-                    </>
+                    <div className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center bg-gray-50 hover:border-eco hover:bg-eco/5 transition-colors cursor-pointer relative overflow-hidden group">
+                      <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={handleSellFileChange} />
+                      <UploadCloud className="w-12 h-12 text-gray-400 mx-auto mb-2 group-hover:text-eco transition-colors" />
+                      <p className="font-bold text-gray-700 text-sm">Click or drag an image here to upload</p>
+                      <p className="text-xs text-gray-400 mt-1">Supports PNG, JPG, JPEG (Max 5MB)</p>
+                    </div>
                   )}
                 </div>
 
-                <input type="text" placeholder="Title (e.g. Denim Jacket)" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco focus:bg-white text-sm" value={sellForm.title} onChange={e => setSellForm({...sellForm, title: e.target.value})} />
-                
-                <textarea placeholder="Describe the item..." rows="3" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco focus:bg-white text-sm" value={sellForm.description} onChange={e => setSellForm({...sellForm, description: e.target.value})}></textarea>
-                
-                <div className="flex gap-4">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-4 top-3 text-gray-500 font-bold">₹</span>
-                    <input type="number" placeholder="Price" className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco focus:bg-white text-sm" value={sellForm.price} onChange={e => setSellForm({...sellForm, price: e.target.value})} />
+                {/* Grid Inputs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-2">
+                      <Tag className="w-4 h-4 text-eco" /> Title *
+                    </label>
+                    <input type="text" placeholder={isArtisan ? "e.g. Denim Jacket" : "e.g. 5kg Old Newspapers"} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium focus:border-eco outline-none transition-colors" value={sellForm.title} onChange={e => setSellForm({...sellForm, title: e.target.value})} />
                   </div>
-                  {isArtisan && (
-                     <input type="text" placeholder="Made from (e.g. Old Jeans)" className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-eco focus:bg-white text-sm" value={sellForm.madeFrom} onChange={e => setSellForm({...sellForm, madeFrom: e.target.value})} />
-                  )}
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-2">
+                      <Layers className="w-4 h-4 text-eco" /> {isArtisan ? "Made From" : "Material Type"}
+                    </label>
+                    <input type="text" placeholder={isArtisan ? "e.g. Old Jeans" : "e.g. Paper / Cardboard"} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium focus:border-eco outline-none transition-colors" value={sellForm.madeFrom} onChange={e => setSellForm({...sellForm, madeFrom: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-2">
+                      <IndianRupee className="w-4 h-4 text-eco" /> Price (₹) *
+                    </label>
+                    <input type="number" placeholder="e.g. 150" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium focus:border-eco outline-none transition-colors" value={sellForm.price} onChange={e => setSellForm({...sellForm, price: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-2">
+                      <Package className="w-4 h-4 text-eco" /> Quantity Available *
+                    </label>
+                    <input type="number" min="1" placeholder="e.g. 1" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium focus:border-eco outline-none transition-colors" value={sellForm.quantity} onChange={e => setSellForm({...sellForm, quantity: e.target.value})} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-2">
+                    <FileText className="w-4 h-4 text-eco" /> Description
+                  </label>
+                  <textarea placeholder="Describe the condition, weight, or any details..." rows="3" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium focus:border-eco outline-none transition-colors resize-none" value={sellForm.description} onChange={e => setSellForm({...sellForm, description: e.target.value})}></textarea>
                 </div>
               </div>
 
-             {/* YAHAN SE REPLACE KARO */}
-<div className="p-6 border-t border-gray-100 bg-white">
-  <button 
-    onClick={async () => {
-      setIsSubmittingSell(true);
-      try {
-        console.log("🚀 Publish button clicked! Starting API calls..."); 
+              <div className="p-6 border-t border-gray-100 bg-white">
+                <button 
+                  onClick={async () => {
+                    setIsSubmittingSell(true);
+                    const toastId = toast.loading("Publishing...");
+                    try {
+                      const formData = new FormData();
+                      formData.append('image', sellImage);
+                      const uploadRes = await axios.post('http://localhost:5000/api/upload', formData);
+                      
+                      const payload = {
+                        sellerId: userInfo._id,
+                        listingType: isArtisan ? 'finished_good' : 'raw_material',
+                        title: sellForm.title,
+                        description: sellForm.description || 'Raw material for upcycling',
+                        price: Number(sellForm.price),
+                        stock: Number(sellForm.quantity) || 1, // Quantity map ho gaya stock pe
+                        imageUrl: uploadRes.data.imageUrl,
+                        madeFrom: sellForm.madeFrom || 'Raw Waste' 
+                      };
 
-        // 1. Pehle Image Upload karo 
-        const formData = new FormData();
-        formData.append('image', sellImage);
-        const uploadRes = await axios.post('http://localhost:5000/api/upload', formData);
-        
-        console.log("✅ Image uploaded:", uploadRes.data.imageUrl);
-
-        // 2. Listing data backend bhejo
-        const payload = {
-          sellerId: userInfo._id,
-          listingType: isArtisan ? 'finished_good' : 'raw_material',
-          title: sellForm.title,
-          description: sellForm.description,
-          price: Number(sellForm.price),
-          imageUrl: uploadRes.data.imageUrl,
-          madeFrom: isArtisan ? sellForm.madeFrom : 'Raw Waste' 
-        };
-
-        await axios.post('http://localhost:5000/api/listings/create', payload);
-        
-        console.log("✅ Listing saved to database!");
-        toast.success('Listed successfully on EcoStore!');
-        setIsSellModalOpen(false);
-        setSellForm({ title: '', description: '', price: '', madeFrom: '' });
-        setSellImage(null);
-      } catch (error) {
-        console.error("❌ API Error:", error);
-        toast.error('Failed to publish listing');
-      } finally {
-        setIsSubmittingSell(false);
-      }
-    }}
-    disabled={!sellForm.title || !sellForm.price || !sellImage || isSubmittingSell}
-    className="w-full bg-eco text-white py-3.5 rounded-xl font-bold shadow-md hover:shadow-lg hover:bg-eco-dark transition-all disabled:opacity-50 flex justify-center"
-  >
-    {isSubmittingSell ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Publish Listing'}
-  </button>
-</div>
+                      await axios.post('http://localhost:5000/api/listings/create', payload);
+                      
+                      toast.success('Listed successfully on EcoStore!', { id: toastId });
+                      setIsSellModalOpen(false);
+                      setSellForm({ title: '', description: '', price: '', madeFrom: '', quantity: '1' });
+                      removeSellImage();
+                    } catch (error) {
+                      toast.error('Failed to publish listing', { id: toastId });
+                    } finally {
+                      setIsSubmittingSell(false);
+                    }
+                  }}
+                  disabled={!sellForm.title || !sellForm.price || !sellImage || isSubmittingSell}
+                  className="w-full bg-eco text-white py-4 rounded-xl font-black shadow-lg shadow-eco/30 hover:bg-emerald-600 transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {isSubmittingSell ? <span className="animate-pulse flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Processing...</span> : <><CheckCircle className="w-5 h-5"/> Publish Listing</>}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 3. HEADER (UPDATED WITH SELL BUTTON) */}
+      {/* 3. HEADER */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -261,7 +306,7 @@ const Dashboard = () => {
 
       <div className="grid md:grid-cols-2 gap-6">
         
-        {/* LEFT CARD: UPLOAD BOX OR SUGGESTIONS */}
+        {/* LEFT CARD: PREMIUM AI UPLOAD BOX OR SUGGESTIONS */}
         <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col h-[500px]">
           <input type="file" ref={fileInputRef} onChange={handleFileChange} hidden />
 
@@ -317,13 +362,48 @@ const Dashboard = () => {
               </button>
             </div>
           ) : (
-            <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current.click()} className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all ${isDragging ? 'border-eco bg-eco-light/20 scale-[1.02]' : 'border-gray-300 hover:border-eco'}`}>
+            <div 
+              onDragOver={handleDragOver} 
+              onDragLeave={handleDragLeave} 
+              onDrop={handleDrop} 
+              onClick={() => fileInputRef.current.click()} 
+              className={`flex-1 relative overflow-hidden border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer group ${isDragging ? 'border-eco bg-eco/5 scale-[1.02] shadow-inner' : 'border-gray-200 hover:border-eco hover:bg-emerald-50/30 hover:shadow-sm'}`}
+            >
+              {/* Subtle background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-50/50 pointer-events-none"></div>
+
               {isAnalyzing ? (
-                <div className="text-center"><Sparkles className="w-8 h-8 text-amber-500 animate-pulse mx-auto" /><p className="font-bold mt-2">Analyzing...</p></div>
+                <div className="text-center z-10">
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 bg-amber-200 blur-xl opacity-50 rounded-full animate-pulse"></div>
+                    <Sparkles className="w-12 h-12 text-amber-500 animate-bounce mx-auto relative z-10" />
+                  </div>
+                  <h3 className="font-black text-gray-800 text-lg">AI is analyzing...</h3>
+                  <p className="text-xs text-gray-500 font-medium mt-1">Detecting materials & finding ideas</p>
+                </div>
               ) : isUploading ? (
-                <Loader2 className="w-8 h-8 animate-spin text-eco" />
+                <div className="text-center z-10">
+                  <Loader2 className="w-12 h-12 animate-spin text-eco mx-auto mb-4" />
+                  <h3 className="font-bold text-gray-800">Uploading securely...</h3>
+                  <p className="text-xs text-gray-500 mt-1">Please wait a moment</p>
+                </div>
               ) : (
-                <><UploadCloud className="w-8 h-8 text-eco" /><p className="font-bold mt-2">{isDragging ? 'Drop here!' : 'Click or Drag Image'}</p></>
+                <div className="text-center z-10 flex flex-col items-center">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-eco/10 transition-transform duration-300 shadow-sm border border-gray-100 group-hover:border-eco/30">
+                    <UploadCloud className="w-10 h-10 text-gray-400 group-hover:text-eco transition-colors" />
+                  </div>
+                  <h3 className="font-black text-gray-800 text-xl mb-2">
+                    {isDragging ? 'Drop your image here!' : 'Upload Waste Image'}
+                  </h3>
+                  <p className="text-sm text-gray-500 font-medium mb-6 max-w-[220px] leading-relaxed">
+                    Drag & drop or <span className="text-eco font-bold cursor-pointer">browse</span> to get AI upcycling ideas
+                  </p>
+                  
+                  {/* Supported Formats Badge */}
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-100/50 px-4 py-2 rounded-xl border border-gray-100">
+                    <span>PNG</span> • <span>JPG</span> • <span>Max 5MB</span>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -337,17 +417,15 @@ const Dashboard = () => {
               <p className="text-gray-400 text-sm text-center mt-10">No active orders</p>
             ) : (
               activeOrders.map((order) => {
-                // 🔥 NEW SYNCHRONIZED STAGES 🔥
                 const stages = [
-                  { key: 'pending_artisan', label: 'Finding' },     // Requested
-                  { key: 'pending_advance', label: 'Quoted' },      // Artisan gave quote
-                  { key: 'ready_for_pickup', label: 'Paid' },       // Advance paid
-                  { key: 'picked_up', label: 'Picked' },            // Picked up
-                  { key: 'in_progress', label: 'Crafting' },        // In making
-                  { key: 'completed', label: 'Done' }               // Delivered
+                  { key: 'pending_artisan', label: 'Finding' },     
+                  { key: 'pending_advance', label: 'Quoted' },      
+                  { key: 'ready_for_pickup', label: 'Paid' },       
+                  { key: 'picked_up', label: 'Picked' },            
+                  { key: 'in_progress', label: 'Crafting' },        
+                  { key: 'completed', label: 'Done' }               
                 ];
                 
-                // Find current status logic
                 let currentStageIndex = 0;
                 if (order.status === 'pending' || order.status === 'pending_artisan') currentStageIndex = 0;
                 else if (order.status === 'pending_advance') currentStageIndex = 1;
@@ -371,7 +449,6 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    {/* PROGRESS BAR */}
                     <div className="relative mb-5 px-1">
                       <div className="absolute top-1.5 left-2 right-2 h-1 bg-gray-100 rounded-full"></div>
                       <div 

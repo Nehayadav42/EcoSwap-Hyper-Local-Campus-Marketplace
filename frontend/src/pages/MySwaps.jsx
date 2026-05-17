@@ -282,14 +282,20 @@ const MySwaps = () => {
                           {btnDetails.text}
                         </button>
                       </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-gray-500 font-medium">Have questions about your order?</p>
-                        <button onClick={() => navigate('/chats')} className="px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200">
-                          Message Artisan
-                        </button>
-                      </>
-                    )}
+                   ) : (
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      {/* 🔥 USER REMINDER BADGE 🔥 */}
+                      {!isArtisan && swap.status === 'in_progress' && swap.pricing && (
+                        <div className="bg-amber-50 text-amber-700 text-xs font-black px-4 py-2.5 rounded-xl border border-amber-200 shadow-sm">
+                          Keep Cash Ready: ₹{swap.pricing.totalAmount - swap.pricing.advanceAmount}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 font-medium hidden sm:block">Have questions about your order?</p>
+                      <button onClick={() => navigate('/chats')} className="px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        Message Artisan
+                      </button>
+                    </div>
+                  )}
                   </div>
                 )}
                 

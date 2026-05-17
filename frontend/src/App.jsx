@@ -20,7 +20,7 @@ import Profile from './pages/Profile';
 import Artisan from './pages/Artisan';
 import ArtisanDashboard from './pages/ArtisanDashboard';
 import Explore from './pages/Explore';
-
+import AddProduct from './pages/AddProduct';
 function App() {
   return (
     <Router>
@@ -49,6 +49,7 @@ function App() {
             <Route path="/chats" element={<Chats />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/artisan" element={<Artisan />} />
+            <Route path="/add-product" element={<AddProduct />} />
 
             {/* ROLE SPECIFIC DASHBOARDS */}
             <Route element={<ProtectedRoute allowedRole="user" />}>
