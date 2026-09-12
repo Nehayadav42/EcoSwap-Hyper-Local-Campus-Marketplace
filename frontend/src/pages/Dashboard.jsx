@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import DashboardNavbar from '../components/DashboardNavbar'; 
+import DashboardNavbar from '../components/DashboardNavbar';
+import FlowIndicator, { getFlowStepIndex } from '../components/FlowIndicator'; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -418,21 +419,15 @@ const Dashboard = () => {
             ) : (
               activeOrders.map((order) => {
                 const stages = [
-                  { key: 'pending_artisan', label: 'Finding' },     
-                  { key: 'pending_advance', label: 'Quoted' },      
-                  { key: 'ready_for_pickup', label: 'Paid' },       
-                  { key: 'picked_up', label: 'Picked' },            
-                  { key: 'in_progress', label: 'Crafting' },        
-                  { key: 'completed', label: 'Done' }               
+                  { key: 'pending_artisan', label: 'Finding' },
+                  { key: 'pending_advance', label: 'Quoted' },
+                  { key: 'ready_for_pickup', label: 'Paid' },
+                  { key: 'picked_up', label: 'Picked' },
+                  { key: 'in_progress', label: 'Crafting' },
+                  { key: 'completed', label: 'Done' }
                 ];
-                
-                let currentStageIndex = 0;
-                if (order.status === 'pending' || order.status === 'pending_artisan') currentStageIndex = 0;
-                else if (order.status === 'pending_advance') currentStageIndex = 1;
-                else if (order.status === 'ready_for_pickup') currentStageIndex = 2;
-                else if (order.status === 'picked_up') currentStageIndex = 3;
-                else if (order.status === 'in_progress') currentStageIndex = 4;
-                else if (order.status === 'completed') currentStageIndex = 5;
+
+                const currentStageIndex = getFlowStepIndex(order.status);
 
                 const displayTitle = order.selectedProduct?.title || order.suggestedProducts?.[0]?.title || "Custom Item";
                 const isActionRequired = order.status === 'pending_advance';
@@ -449,21 +444,11 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    <div className="relative mb-5 px-1">
-                      <div className="absolute top-1.5 left-2 right-2 h-1 bg-gray-100 rounded-full"></div>
-                      <div 
-                        className="absolute top-1.5 left-2 h-1 bg-eco rounded-full transition-all duration-700" 
-                        style={{ width: `${(Math.max(0, currentStageIndex) / (stages.length - 1)) * 100}%`, maxWidth: 'calc(100% - 16px)' }}
-                      ></div>
-                      <div className="relative flex justify-between w-full">
-                        {stages.map((stage, idx) => (
-                          <div key={stage.key} className="flex flex-col items-center w-8">
-                            <div className={`w-3 h-3 rounded-full border-2 transition-all duration-500 z-10 ${idx <= currentStageIndex ? 'bg-eco border-eco scale-110 shadow-sm' : 'bg-white border-gray-200'}`}></div>
-                            <span className={`text-[8px] font-black mt-2 tracking-wide text-center leading-tight ${idx <= currentStageIndex ? 'text-eco' : 'text-gray-400'}`}>{stage.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <FlowIndicator
+                      steps={stages}
+                      currentIndex={currentStageIndex}
+                      size="sm"
+                    />
 
                     <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                       {isActionRequired ? (

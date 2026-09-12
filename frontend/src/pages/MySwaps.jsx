@@ -7,6 +7,7 @@ import {
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import FlowIndicator, { getFlowStepIndex } from '../components/FlowIndicator';
 
 const MySwaps = () => {
   const navigate = useNavigate();
@@ -140,11 +141,6 @@ const MySwaps = () => {
     { id: 'completed', label: 'Delivered', icon: CheckCircle }
   ];
 
-  const getStepIndex = (currentStatus) => {
-    const statusMap = { 'pending': 0, 'pending_artisan': 0, 'pending_advance': 1, 'ready_for_pickup': 2, 'picked_up': 3, 'in_progress': 4, 'completed': 5 };
-    return statusMap[currentStatus] !== undefined ? statusMap[currentStatus] : 0;
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div className="bg-gray-900 p-8 rounded-[2rem] text-white shadow-xl flex justify-between items-center">
@@ -172,7 +168,7 @@ const MySwaps = () => {
       ) : (
         <div className="space-y-8">
           {swaps.map((swap) => {
-            const currentStepIndex = getStepIndex(swap.status);
+            const currentStepIndex = getFlowStepIndex(swap.status);
             const isCompleted = swap.status === 'completed'; 
             const targetTitle = swap.selectedProduct?.title || swap.suggestedProducts?.[0]?.title || "Custom Upcycle";
             const targetImage = swap.selectedProduct?.generatedImage || swap.selectedProduct?.imageUrl;
@@ -221,24 +217,11 @@ const MySwaps = () => {
 
                 {/* TRACKER */}
                 {!isCompleted && swap.status !== 'pending_advance' && (
-                  <div className="relative mb-8 mt-4 overflow-x-auto pb-4 md:pb-0 hide-scrollbar">
-                    <div className="min-w-[500px] md:min-w-0 relative">
-                      <div className="absolute top-5 left-[8%] right-[8%] h-1 bg-gray-100 rounded-full z-0">
-                        <motion.div className="h-full bg-eco rounded-full transition-all duration-1000" initial={{ width: 0 }} animate={{ width: `${(currentStepIndex / (trackingSteps.length - 1)) * 100}%` }} />
-                      </div>
-                      <div className="relative z-10 flex justify-between">
-                        {trackingSteps.map((step, index) => {
-                          const isActive = index <= currentStepIndex; const Icon = step.icon;
-                          return (
-                            <div key={step.id} className="flex flex-col items-center gap-2 flex-1">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 shadow-sm ${isActive ? 'bg-eco text-white ring-4 ring-eco-light/30' : 'bg-white text-gray-300 border-2 border-gray-100'}`}><Icon className="w-5 h-5" /></div>
-                              <span className={`text-[9px] md:text-[10px] font-bold text-center uppercase tracking-wider ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  <FlowIndicator
+                    steps={trackingSteps}
+                    currentIndex={currentStepIndex}
+                    size="md"
+                  />
                 )}
 
               {/* ACTION AREA */}
